@@ -516,7 +516,7 @@ ci.execute(argparse.Namespace(root=root, timeout=30, arguments=["fixture-command
             run.assert_not_called()
 
     def test_real_interrupt_signals_record_failure_and_stop_the_owned_instance(self):
-        script = '''import argparse, importlib.util, pathlib, signal, subprocess, sys
+        script = '''import argparse, importlib.util, pathlib, signal, subprocess, sys, time
 spec = importlib.util.spec_from_file_location("signal_fixture_subject", sys.argv[1])
 ci = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = ci
@@ -526,8 +526,11 @@ ci.framework_sha = lambda: sys.argv[5]
 def run(command, **kwargs):
     if "exec" in command:
         ready.write_text("waiting for a real signal")
-        signal.pause()
-        raise AssertionError("signal did not interrupt the command")
+        # A signal delivered just before pause() can leave its Python handler
+        # pending while the syscall waits for a second signal. Bounded sleeps
+        # allow that pending handler to run without changing the exit deadline.
+        while True:
+            time.sleep(0.01)
     if "cleanup" in command:
         stopped.write_text(str(root))
         return subprocess.CompletedProcess(command, 0)
