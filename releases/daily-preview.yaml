@@ -3,9 +3,9 @@ delivery: workbench-v1
 previous_version: release-v0.1.6
 preview_version: preview.20261012.1
 components:
-  accelerator: v0.1.6-preview.20261011.2
-  connector: v0.1.5-preview.20261011.2
-  sandboxer: v0.1.6-preview.20261011.2
-  orchestrator: v0.1.6-preview.20261011.2
-  runtime: runtime-v0.1.6-preview.20261011.2
-  vmlinux: vmlinux-v0.1.4-preview.20261009.4
+  accelerator: v0.1.7-preview.20261012.1
+  connector: v0.1.5
+  sandboxer: v0.1.7-preview.20261012.1
+  orchestrator: v0.1.7-preview.20261012.1
+  runtime: runtime-v0.1.7-preview.20261012.1
+  vmlinux: vmlinux-v0.1.4
