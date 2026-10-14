@@ -270,3 +270,5 @@ Do not report security vulnerabilities in public issues or discussions. Follow t
 Original project content in this repository is licensed under the [Apache License 2.0](LICENSE). Third-party and differently licensed content retains its own declarations and obligations. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution licensing.
 
 <!-- Temporary RFC 245 docs-only Actions acceptance; this branch is not a merge candidate. -->
+
+[RFC 245 deliberate missing-link acceptance](rfc245-deliberately-absent.md)
