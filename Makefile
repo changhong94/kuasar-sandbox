@@ -263,3 +263,5 @@ help:
 .PHONY: test-release-source-set
 test-release-source-set:
 	PYTHONDONTWRITEBYTECODE=1 python3 -B ci/integration/release-source-set.py --sources "$(ORG)" --plan "$(ORG)/.source-plan.json" --output "$(RELEASE_CHECK_OUTPUT)"
+
+# RFC 246 temporary SOURCE caller acceptance; this branch must not be merged.
