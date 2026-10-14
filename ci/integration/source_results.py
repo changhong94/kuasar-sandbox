@@ -34,7 +34,7 @@ def validate(plan, groups, run, jobs, available, read):
     require(type(run.get('id')) is int and run['id'] > 0 and
             type(run.get('run_attempt')) is int and run['run_attempt'] > 0 and
             re.fullmatch('[0-9a-f]{40}', run.get('head_sha', '')), 'missing Actions run identity')
-    selected = {}
+    selected, seen = {}, set()
     for job in jobs:
         match = re.search(r'(?:^| / )source-checks \((all|A|B)\)$', job.get('name', ''))
         if not match:
@@ -43,8 +43,10 @@ def validate(plan, groups, run, jobs, available, read):
         require(group in groups, 'unexpected source producer')
         require(job.get('run_id') == run['id'] and type(job.get('run_attempt')) is int
                 and 0 < job['run_attempt'] <= run['run_attempt'], 'source job run/attempt mismatch')
+        identity = (group, job['run_attempt'])
+        require(identity not in seen, 'duplicate source producer')
+        seen.add(identity)
         old = selected.get(group)
-        require(old is None or old['run_attempt'] != job['run_attempt'], 'duplicate source producer')
         if old is None or old['run_attempt'] < job['run_attempt']:
             selected[group] = job
     require(set(selected) == set(groups), 'missing source producer')
@@ -113,13 +115,16 @@ def pages(endpoint, key):
 
 
 def read_artifact(root, available, artifact_id):
-    # download-artifact authenticates same-run downloads using the Actions
-    # runtime service, preserving one directory per immutable artifact name.
+    # The pinned download action flattens a single pattern match, even with
+    # merge-multiple:false. Count every match, including earlier attempts,
+    # rather than the number of selected groups in the current plan.
     rows = [row for row in available if row['id'] == artifact_id]
     require(len(rows) == 1, 'ambiguous artifact ID')
     name = rows[0]['name']
     require(re.fullmatch(r'integration-source-result-\d+-\d+-(all|A|B)', name), 'invalid source artifact name')
-    directory = root / name
+    prefix = 'integration-source-result-' + name.split('-')[3] + '-'
+    matched = [row for row in available if row.get('name', '').startswith(prefix)]
+    directory = root if len(matched) == 1 else root / name
     require(directory.is_dir() and not directory.is_symlink(), 'missing downloaded source artifact')
     result = {}
     for key, suffix in [('result', 'source-system-evidence/output/source-result.json'),

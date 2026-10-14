@@ -221,6 +221,15 @@ class SourceChecksTests(unittest.TestCase):
         data[3][3] = copy.deepcopy(data[3][1])
         self.assertEqual([row['run_attempt'] for row in self.validate_evidence(data)['groups']], [2, 1])
 
+    def test_duplicate_older_attempt_rejected_in_unsorted_history(self):
+        data = self.grouped_evidence()
+        older = copy.deepcopy(data[1][0])
+        data[1] = [dict(older, id=301, run_attempt=2), older, dict(older, id=302), data[1][1]]
+        data[2].append(dict(data[2][0], id=3, name=source_results.artifact_name(123, 2, 'A')))
+        data[3][3] = copy.deepcopy(data[3][1])
+        with self.assertRaisesRegex(ValueError, 'duplicate source producer'):
+            self.validate_evidence(data)
+
     def test_each_group_executes_original_commands_and_propagates_failure(self):
         for group in ('A', 'B'):
             with self.subTest(group=group):
@@ -236,7 +245,8 @@ class SourceChecksTests(unittest.TestCase):
                 self.assertEqual(self.result()['exit_code'], 29)
 
     def test_downloaded_artifacts_keep_attempt_and_group_directories(self):
-        available = [dict(id=1, name=source_results.artifact_name(123, 2, 'A'))]
+        available = [dict(id=1, name=source_results.artifact_name(123, 2, 'A')),
+                     dict(id=2, name=source_results.artifact_name(123, 1, 'A'))]
         base = self.root / available[0]['name'] / 'nested/source-system-evidence'
         (base / 'output').mkdir(parents=True)
         for name in ('output/source-result.json', 'receipt.json', 'instance.json'):
@@ -246,6 +256,27 @@ class SourceChecksTests(unittest.TestCase):
         (base / 'output/source-result.json').unlink()
         with self.assertRaises(ValueError):
             source_results.read_artifact(self.root, available, 1)
+
+    def test_single_pattern_match_is_flattened_for_all_or_a(self):
+        for group in ('all', 'A'):
+            with self.subTest(group=group), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                available = [dict(id=1, name=source_results.artifact_name(123, 2, group)),
+                             dict(id=9, name='unrelated-artifact')]
+                base = root / '_temp/source-system-evidence'
+                (base / 'output').mkdir(parents=True)
+                for name in ('output/source-result.json', 'receipt.json', 'instance.json'):
+                    (base / name).write_text('{}')
+                self.assertEqual(source_results.read_artifact(root, available, 1),
+                                 dict(result={}, receipt={}, instance={}))
+                for other in (source_results.artifact_name(123, 1, group),
+                              source_results.artifact_name(123, 2, 'B')):
+                    with self.assertRaisesRegex(ValueError, 'missing downloaded'):
+                        source_results.read_artifact(root, available + [dict(id=2, name=other)], 1)
+                (base / 'receipt.json').unlink()
+                (base / 'receipt.json').symlink_to(base / 'instance.json')
+                with self.assertRaisesRegex(ValueError, 'invalid source evidence'):
+                    source_results.read_artifact(root, available, 1)
 
     def test_owner_failure_retains_real_exit_and_stops_later_checks(self):
         with self.assertRaisesRegex(ValueError, "required source check failed: connector-unit-race-vet"):
