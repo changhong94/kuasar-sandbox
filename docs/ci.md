@@ -130,12 +130,29 @@ machine and fresh Workbench system instance with the original 2 CPU/8 GiB
 budget, private sources, Go workspace, temporary directories and build/module
 caches. No source cache is restored or shared between groups.
 
-The reusable workflow's `source_check_groups` input defaults to false. Before
-enabling it in a caller, compare repeated current-source Actions runs with
-`all`, including cold and normal runs: queue, source preparation/execution,
-final feedback and total job minutes. A stage-only speedup or historical
-command timing is not acceptance. Leave `all` selected if final benefit or
-compute cost is unproven.
+The reusable workflow keeps `source_check_groups: false` as its compatibility
+default. The PR callers in `ci.yml` and `ci-entry.yml` select A/B after rollout
+acceptance; the aggregate caller retains `all` until its own final-workflow
+benefit and cost are measured. Set either PR caller back to false to restore
+`all`; no target, resource budget or required check changes.
+
+Two paired real Actions measurements used identical selected component sources,
+case inventories, complete commands and immutable Workbench image within each
+pair; the candidate trees differed only in the caller's group flag. Both pairs
+were fresh cold builds without a restored writable source cache, including the
+repeat. These first-attempt samples measure final workflow feedback and total
+job minutes, not the historical command model or later fault/retry costs.
+
+| Pair (all / A+B) | Final feedback | Total job minutes | Feedback / cost change |
+| --- | --- | --- | --- |
+| [38543260895](https://github.com/kuasar-sandbox/kuasar-sandbox/actions/runs/38543260895/attempts/1) / [38543242866](https://github.com/kuasar-sandbox/kuasar-sandbox/actions/runs/38543242866/attempts/1) | 37:43 / 25:28 | 99.467 / 104.550 | -32.48% / +5.11% |
+| [38549209231](https://github.com/kuasar-sandbox/kuasar-sandbox/actions/runs/38549209231/attempts/1) / [38549216882](https://github.com/kuasar-sandbox/kuasar-sandbox/actions/runs/38549216882/attempts/1) | 44:09 / 27:06 | 108.983 / 110.450 | -38.62% / +1.35% |
+
+The later cancellation of pair 2's grouped run is a separate negative test;
+its current run conclusion must not replace the successful first-attempt
+measurement. Revalidate current-source correctness and all six caller paths,
+including failure and partial reruns, before completing rollout. These SOURCE
+measurements do not establish aggregate or Workbench-group savings.
 
 Both schedules bind results to the exact plan, original command coverage,
 Workbench image, successful cleanup, and current Actions producer job and
@@ -146,6 +163,52 @@ is the latest producer for that group and still matches the current plan;
 rerunning that producer invalidates its older artifact. A/B cannot share an
 instance or machine. Rollback selects `all` without removing these checks or
 altering release selection and required-check rules.
+
+Actions may give a carried successful job a new ID in a partial rerun while retaining its original execution timestamps, runner and steps. The shared reader traces such a view back only to the matching latest preceding successful execution; a genuinely newer running, failed or cancelled producer still invalidates old evidence. The same rule covers source groups and Workbench runtime groups, ARM, staged inputs and the validation job.
+
+### Workbench runtime groups
+
+The reusable workflow and aggregate dispatch expose `workbench_runtime_groups`,
+defaulting to false. The default retains the full x86 runtime job and Hosted ARM
+artifact-only qualification. Experimental x86 groups are A (`basic`, `image`,
+`orchestrator`, `sandbox`, `snapshot`) and B (`builder`, `network`, `storage`,
+`telemetry`). Membership derives from this plan's exact ordinary case inventory;
+unknown suites fail, coverage must be complete and disjoint, and the existing
+`storage.obs.sh` exclusion remains. Suite order and state stay within one group.
+Each independent hosted machine and private empty Workbench instance prepares
+**all** ordinary offline inputs, then runs its assigned cases with the unchanged
+2 CPU/8 GiB budget, preflight, egress, isolation, timing, disk and cleanup checks.
+
+Grouped results use explicit `workbench-groups-v1` / `native-grouped` evidence.
+They retain both executions, common exact source/assets/image identities,
+complete coverage and immutable run/attempt/group artifacts. Current successful
+producer jobs, ARM evidence, stage/plan inputs and the final validation job must
+agree. An unchanged earlier successful attempt may be reused; rerunning any
+bound producer invalidates the old validation. Missing, duplicate, failed,
+cancelled or shared-instance evidence cannot authorize publication.
+
+Reader compatibility must be merged before grouped production: the publisher
+loads `bind-validation.py` from **main**. Registry publication, release notes,
+baseline/artifact resolution, Hosted selection and Preview recovery retain
+legacy full and ARM results alongside grouped evidence. Public downloads keep
+the same assets and per-architecture selection. Release-body and complete
+registry-reservation limits are unchanged. Repeated comparable real Actions
+runs, including failure/rerun injections, queue/preparation/execution/final
+feedback and total job minutes, must justify activation. Local or simulated
+metadata is not Actions acceptance. Without stable final benefit at acceptable
+cost, keep `all`. Rollback disables production while retaining readers for any
+published grouped evidence.
+
+For repeated same-source qualification, aggregate dispatch also accepts
+`validation_only=true` (default false). It still requires main, the exact current
+selection and an unpublished version, and runs all original build/runtime/source
+checks, publication binding, body limits and registry-input verification. It
+stops before registry/Release writes and retains this run's artifacts under their
+existing expiry for failure/rerun tests. Compare `all` and grouped inputs on the
+same frozen selection; do not substitute these pre-publication timings for real
+publication end-to-end benefit. Finish the selected release through the normal
+publication mode, and never rerun producers behind already published grouped
+evidence merely to obtain a benchmark.
 
 ## 4. Daily and Stable
 
