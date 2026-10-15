@@ -269,8 +269,3 @@ aarch64 --output <new-directory>` 使用公共 runner 的发现逻辑和共享�
 
 安装工具保留其上游许可证及来源记录。原自定义策略源码及不再使用的 vendor
 副本不再随包交付。
-
-按能力分配的 CI 使用同一 system launcher 执行补充 E2E 分组。Actions Runner 运行在
-宿主机并传输固定输入，用例在 Workbench 内执行，必要时继续使用嵌套的运行时专用镜像。
-注册范围、资源预算、证据和所属资源清理见
-[Runner 接入](../ci/runner/README_zh.md#capability-e2e-runners)。

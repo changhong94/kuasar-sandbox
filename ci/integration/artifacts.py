@@ -867,7 +867,8 @@ def expand_shards(plan, arch, record):
 def check_timings(timings, cases):
     require(isinstance(timings, list) and [record['case'] for record in timings] == cases,
             'missing or duplicated case execution evidence')
-    require(all(record['exit_code'] == 0 and type(record['wall_seconds']) in (int, float) and
+    require(all(type(record['exit_code']) is int and record['exit_code'] == 0 and
+                type(record['wall_seconds']) in (int, float) and
                 math.isfinite(record['wall_seconds']) and record['wall_seconds'] >= 0
                 for record in timings), 'case execution did not pass')
 

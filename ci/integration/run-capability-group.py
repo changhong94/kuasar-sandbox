@@ -7,6 +7,7 @@ runner credentials inside the supplemental execution environment.
 """
 import argparse
 import errno
+import hashlib
 import importlib.util
 import json
 import os
@@ -32,13 +33,21 @@ def run_module():
     return module
 
 
+def instance(root):
+    # The state path already binds runner/run/attempt/arch/group. Docker names
+    # must also differ when a machine hosts more than one runner service.
+    name = 'e2e-' + hashlib.sha256(os.fsencode(root.resolve())).hexdigest()[:20]
+    return root / name
+
+
 def command(root, *arguments):
-    return [sys.executable, '-B', str(ROOT / 'workbench/workbench'), '--root', str(root), '--name', 'e2e', *map(str, arguments)]
+    return [sys.executable, '-B', str(ROOT / 'workbench/workbench'), '--root', str(root),
+            '--name', instance(root).name, *map(str, arguments)]
 
 
-def cleanup(root):
-    if (root / 'e2e/instance.json').exists():
-        subprocess.run(command(root, 'cleanup'), check=True, stdin=subprocess.DEVNULL, timeout=600)
+def cleanup(root, delete_output=False):
+    if (instance(root) / 'instance.json').exists():
+        subprocess.run(command(root, 'cleanup', *(['--delete-output'] if delete_output else [])), check=True, stdin=subprocess.DEVNULL, timeout=600)
 
 
 def copy_input(source, target):
@@ -63,15 +72,15 @@ def read_owned(path, limit=2 * 1024 * 1024):
 
 
 def diagnostics(root, destination):
-    if not (root / 'e2e/instance.json').exists():
+    if not (instance(root) / 'instance.json').exists():
         return
     artifacts.require(not destination.exists(), 'diagnostic output must be fresh')
     destination.mkdir(parents=True, mode=0o700)
-    paths = [root / 'e2e/instance.json']
+    paths = [instance(root) / 'instance.json']
     for pattern in ('container-*.json', 'startup-*.log'):
-        paths.extend(sorted((root / 'e2e/output').glob(pattern))[-4:])
+        paths.extend(sorted((instance(root) / 'output').glob(pattern))[-4:])
     for path in paths:
-        artifacts.require(path.parent.resolve() in {root / 'e2e', root / 'e2e/output'}, 'escaping diagnostic directory')
+        artifacts.require(path.parent.resolve() in {instance(root), instance(root) / 'output'}, 'escaping diagnostic directory')
         (destination / path.name).write_bytes(read_owned(path))
 
 
@@ -137,13 +146,13 @@ def execute(args):
                                'KUASAR_RUNTIME_READER=/inputs/release/readers/runtime-payloads.py',
                                'python3', '-B', *internal), check=True, stdin=subprocess.DEVNULL,
                        timeout=profile['resources']['timeout_minutes'] * 60)
-        result = json.loads(read_owned(args.root / 'e2e/output/result.json'))
+        result = json.loads(read_owned(instance(args.root) / 'output/result.json'))
         routing.check_result(plan, args.arch, args.group, result)
         artifacts.verify_workspace(args.workspace, plan, args.arch)
         return result
     except BaseException as error:
         failed = True
-        report = args.root / 'e2e/output/result.json'
+        report = instance(args.root) / 'output/result.json'
         if report.exists() or report.is_symlink():
             try:
                 result = json.loads(read_owned(report))
@@ -172,13 +181,14 @@ def main():
     parser.add_argument('--group')
     parser.add_argument('--inside', action='store_true')
     parser.add_argument('--cleanup', action='store_true')
+    parser.add_argument('--delete-output', action='store_true')
     args = parser.parse_args()
     for key, value in vars(args).items():
         if isinstance(value, Path):
             setattr(args, key, value.resolve())
     if args.cleanup:
         try:
-            cleanup(args.root)
+            cleanup(args.root, args.delete_output)
         finally:
             if args.diagnostics:
                 diagnostics(args.root, args.diagnostics)

@@ -329,9 +329,3 @@ must pass for the declared product scope.
 
 Installed tools retain their upstream license and source records. The former
 custom policy sources and their unused vendor copies are no longer shipped.
-
-Capability-routed CI uses the same system launcher for supplemental E2E groups.
-The Actions Runner runs on the host and transports fixed inputs; cases execute
-inside Workbench, including a nested runtime-only image where required. See
-[runner integration](../ci/runner/README.md#capability-e2e-runners) for registration,
-resource budgets, evidence and owned-resource cleanup.

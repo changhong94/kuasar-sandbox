@@ -106,6 +106,33 @@ def check_request_rejection():
         assert result.returncode != 0
 
 
+def check_persistent_workspace_isolation():
+    # Execute the real setup and transport twice in a reused Actions workspace.
+    # A prior prepared tree must neither be overwritten nor block a new group.
+    steps = {row.get('name'): row for row in load('integration-architecture.yml')['jobs']['e2e']['steps']}
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory); temporary = root / 'temp'; temporary.mkdir()
+        (root / 'prepared').mkdir(); (root / 'prepared/stale').write_text('prior job')
+        payload = root / 'payload'; payload.write_text('current artifact')
+        import tarfile
+        with tarfile.open(root / 'prepared.tar', 'w') as archive:
+            archive.add(payload, arcname='aarch64/payload')
+        environment = dict(os.environ, RUNNER_TEMP=str(temporary), GITHUB_RUN_ID='42', GITHUB_RUN_ATTEMPT='1',
+                           TARGET_ARCH='aarch64', TEST_SHARD='supplemental-arm--snapshot',
+                           GITHUB_ENV=str(root / 'environment'))
+        workspaces = []
+        for _ in range(2):
+            subprocess.run(['bash', '-ceu', steps['Create a fresh execution workspace']['run']],
+                           cwd=root, env=environment, check=True)
+            workspace = Path((root / 'environment').read_text().splitlines()[-1].split('=', 1)[1])
+            assert workspace.parent == temporary and workspace not in workspaces
+            subprocess.run([sys.executable, '-B', str(ROOT / 'ci/integration/transport.py'), 'extract',
+                            str(root / 'prepared.tar'), str(workspace / 'prepared')], check=True)
+            assert (workspace / 'prepared/aarch64/payload').read_text() == 'current artifact'
+            workspaces.append(workspace)
+        assert (root / 'prepared/stale').read_text() == 'prior job'
+
+
 def check_helper_materialization():
     """Execute the real artifact transport/layout and validate exact tag inputs."""
     import importlib.util
@@ -365,7 +392,13 @@ def check():
     e2e_steps = {step.get('name'): step for step in lanes['e2e']['steps']}
     assert e2e_steps["Run the selected capability group from immutable inputs"]["env"]["EXECUTION_RUNNER_ENVIRONMENT"] == "${{ runner.environment }}"
     assert e2e_steps['Bootstrap declared native execution profile']['if'] == "matrix.group.executor == 'native'"
-    assert e2e_steps["Release only this group's Workbench resources"]['if'] == "always() && matrix.group.executor == 'workbench-system'"
+    assert e2e_steps["Release only this group's Workbench resources"]['if'] == "always() && matrix.group.executor == 'workbench-system' && env.E2E_WORKSPACE != ''"
+    assert 'mktemp -d' in e2e_steps['Create a fresh execution workspace']['run']
+    for step in lanes['e2e']['steps']:
+        if 'download-artifact@' in step.get('uses', ''):
+            assert step['with']['path'].startswith('${{ env.E2E_WORKSPACE }}/')
+    assert e2e_steps['Upload exact shard result']['with']['path'].startswith('${{ env.E2E_WORKSPACE }}/results/')
+    assert "--delete-output" in e2e_steps["Remove only this task's retained files"]['run']
     building = {step.get("name"): step for step in lanes["build"]["steps"]}
     for name in ("Build trusted native archive readers in Workbench", "Build the affected delta and test helpers once"):
         assert building[name]["uses"] == "./framework/.github/actions/workbench"
@@ -398,6 +431,7 @@ def check():
     assert '--arch "$TARGET_ARCH"' in helper["with"]["run"]
     assert "GH_TOKEN" not in helper["with"]["run"]
     check_helper_materialization()
+    check_persistent_workspace_isolation()
     assert integration["results"]["needs"] == ["resolve", "x86_64", "aarch64", "source-checks", "workbench-native", "workbench-release"]
     native = integration['workbench-native']
     assert native['needs'] == 'resolve'

@@ -115,7 +115,10 @@ Supplemental groups use the existing Workbench system launcher. Host Actions
 steps verify and transport fixed inputs, then run the existing public E2E entry
 inside the owned instance. Storage, snapshot and ARM image groups retain a
 nested runtime-only container with no compilers or component source trees.
-Runner credentials and host Docker sockets are not mounted into Workbench.
+Each group gets a fresh temporary download/prepared/result directory and a unique
+Workbench instance name, including on a reused self-hosted machine. Diagnostics
+are uploaded before retained task files are deleted. Runner credentials and host
+Docker sockets are not mounted into Workbench.
 Startup capability checks run in the effective runtime, and results bind actual
 runner name/OS/architecture/environment, run/attempt, profile/configuration,
 prepared provenance and executor image. The architecture and final gates require

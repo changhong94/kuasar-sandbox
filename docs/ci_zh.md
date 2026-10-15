@@ -107,8 +107,9 @@ prepare 导出已经构建的运行时镜像并绑定压缩归档摘要；执行
 
 补充分组使用现有 Workbench system launcher。宿主 Actions 步骤校验并传输固定输入，
 随后在所属实例中调用现有公共 E2E 入口。storage、snapshot 和 ARM image 分组继续使用
-嵌套的运行时专用容器，不含编译器或组件源码树。Runner 凭据和宿主 Docker socket 不挂入
-Workbench。能力启动检查发生在有效运行环境中，结果绑定实际 Runner 名称、系统、架构、
+嵌套的运行时专用容器，不含编译器或组件源码树。每个分组使用新的下载、prepared、结果
+临时目录及唯一 Workbench 实例名，复用自托管机器时也不继承旧任务文件。诊断上传后清理
+所属任务文件。Runner 凭据和宿主 Docker socket 不挂入 Workbench。能力启动检查发生在有效运行环境中，结果绑定实际 Runner 名称、系统、架构、
 环境类型、run/attempt、profile/配置、prepared provenance 和执行器镜像。
 架构及最终门禁要求每个非空分组成功；失败、取消、缺失结果或身份变化均不能变成成功。
 空组不分配 Runner，也不宣称完成 E2E。部分重跑只复用同一不可变计划和 workflow run

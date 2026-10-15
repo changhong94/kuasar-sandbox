@@ -178,6 +178,26 @@ class Allocation(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'future'):
                 artifacts.collect_shard_results(plan, 'aarch64', results)
 
+    def test_compact_dual_architecture_evidence_remains_lossless(self):
+        plan = fixture()
+        records = {}
+        for arch in artifacts.ARCHES:
+            shards = result_set(plan, arch)
+            complete = dict(shards)
+            if plan['lanes'][arch]['performance']:
+                complete['performance'] = {'arch': arch, 'plan_id': artifacts.identity(plan),
+                    'test_revisions': plan['test_revisions'], 'conclusion': 'success',
+                    'checks': ['working-set-smoke'], 'provenance_sha256': 'd' * 64,
+                    'timings': [{'case': 'working-set-smoke', 'exit_code': 0, 'wall_seconds': 1}]}
+            records[arch] = artifacts.collect_shard_results(plan, arch, complete)
+            self.assertEqual(artifacts.expand_shards(plan, arch, records[arch]), shards)
+        accepted = artifacts.collect_results(plan, records)
+        self.assertEqual(accepted['architectures'], records)
+        changed = copy.deepcopy(records)
+        changed['aarch64']['shards']['supplemental-arm--basic']['timings'][0]['exit_code'] = False
+        with self.assertRaises(ValueError):
+            artifacts.collect_results(plan, changed)
+
     def test_final_gate_requires_every_group_and_identity(self):
         plan = fixture(); results = result_set(plan, 'aarch64')
         compact = artifacts.collect_shard_results(plan, 'aarch64', results)
@@ -230,6 +250,17 @@ class RuntimeTransport(unittest.TestCase):
             link.unlink(); link.write_bytes(b'x' * 11)
             with self.assertRaisesRegex(ValueError, 'excessive'):
                 driver.read_owned(link, limit=10)
+
+    def test_workbench_names_are_stable_and_unique_per_task_directory(self):
+        spec = importlib.util.spec_from_file_location('group_names', Path(__file__).with_name('run-capability-group.py'))
+        driver = importlib.util.module_from_spec(spec); spec.loader.exec_module(driver)
+        with tempfile.TemporaryDirectory() as directory:
+            first, second = Path(directory) / 'runner-one/group', Path(directory) / 'runner-two/group'
+            self.assertNotEqual(driver.instance(first).name, driver.instance(second).name)
+            self.assertEqual(driver.instance(first), driver.instance(first))
+            for operation in ('start', 'exec', 'cleanup'):
+                command = driver.command(first, operation)
+                self.assertEqual(command[command.index('--name') + 1], driver.instance(first).name)
 
     def test_start_case_and_cancellation_failures_cleanup_without_success(self):
         spec = importlib.util.spec_from_file_location('group_lifecycle', Path(__file__).with_name('run-capability-group.py'))

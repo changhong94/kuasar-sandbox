@@ -75,9 +75,9 @@ class FixedInputs(unittest.TestCase):
                                                      Path(__file__).with_name('run-source-checks.py'))
         checks = importlib.util.module_from_spec(spec); spec.loader.exec_module(checks)
         git = subject.tag_sources.git
-        for suffix in ('', '.git'):
-            with self.subTest(suffix=suffix):
-                root = self.root / ('canonical' if not suffix else 'suffixed')
+        for suffix, modern in [(suffix, modern) for suffix in ('', '.git') for modern in (False, True)]:
+            with self.subTest(suffix=suffix, modern=modern):
+                root = self.root / (('canonical' if not suffix else 'suffixed') + ('-modern' if modern else '-legacy'))
                 inputs = root / 'inputs'
                 platform = inputs / 'platform'
                 fixture(platform, 'connector', 'v0.0.1')
@@ -86,6 +86,11 @@ class FixedInputs(unittest.TestCase):
                 shutil.rmtree(platform / 'test/e2e/cases')
                 cases = platform / 'test/e2e/platform/cases'; cases.mkdir(parents=True)
                 for name in CASES['platform']: (cases / name).write_text('echo platform\n')
+                if modern:
+                    marker = cases.parent / 'lib/requirements.json'; marker.parent.mkdir(parents=True, exist_ok=True)
+                    marker.write_text('{"schema":1}\n')
+                    for case in cases.iterdir():
+                        case.write_text('# e2e-requires: ["kvm"]\n' + case.read_text())
                 records, units = {}, {}
                 for unit in resolver.release.selection.UNITS:
                     owner = 'guest-runtime' if unit in ('runtime', 'vmlinux') else unit
@@ -95,6 +100,11 @@ class FixedInputs(unittest.TestCase):
                     shutil.rmtree(source / 'test/e2e/cases')
                     (source / 'test/e2e/cases').mkdir()
                     for name in CASES[owner]: (source / 'test/e2e/cases' / name).write_text('echo owner\n')
+                    if modern:
+                        marker = source / 'test/e2e/lib/requirements.json'; marker.parent.mkdir(parents=True, exist_ok=True)
+                        marker.write_text('{"schema":1}\n')
+                        for case in (source / 'test/e2e/cases').iterdir():
+                            case.write_text('# e2e-requires: []\n' + case.read_text())
                     declare_fixture(source, owner)
                     git(source, 'add', '.'); git(source, 'commit', '-qm', 'owner inputs')
                     git(source, 'tag', tag)
@@ -127,6 +137,14 @@ class FixedInputs(unittest.TestCase):
                      patch.dict(os.environ, RELEASE_VERSION='release-v1.2.3', PLATFORM_SOURCE_SHA=sha):
                     plan = resolver.exact_assets_plan('a' * 40, stage)
                 package.assert_called_once()
+                self.assertEqual(plan['schema'], 4 if modern else 3)
+                if modern:
+                    contract = plan['case_requirements']['cases']
+                    self.assertEqual(set(contract), {name for names in CASES.values() for name in names})
+                    self.assertEqual(contract['basic.demo.sh']['requires'], ['kvm'])
+                    self.assertEqual(plan['lanes']['aarch64']['groups']['supplemental-arm--basic']['cases'], ['basic.demo.sh'])
+                    self.assertEqual(plan['lanes']['aarch64']['selection']['cases'],
+                                     artifacts.suite_selection(['platform'], 'aarch64', CASES, native_full=True)['cases'])
                 self.assertEqual(plan['run_inputs']['platform'], subject.inspect_platform(platform, sha))
                 shutil.rmtree(inputs)  # Consumers have only the frozen archive.
                 with patch.object(subject, 'INPUT_ARCHIVE', capsule):
