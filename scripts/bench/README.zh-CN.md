@@ -12,7 +12,7 @@
 cd scripts/bench
 ```
 
-当前生命周期脚本面向已有的 Alice 部署，部分脚本仍包含机器特定的路径、服务名、
+当前生命周期脚本面向已配置的测试部署，部分脚本仍包含机器特定的路径、服务名、
 网络配置和基础镜像 ID。用于其他机器前，请检查 `bench_lifecycle.py`、
 `deploy-source.sh`、`prepare-node.py`、`prepare-storage.py` 和 `run-bench.py`。
 本文使用相对命令不代表这些脚本已经支持任意机器。

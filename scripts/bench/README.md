@@ -14,7 +14,7 @@ assume that you remain in `scripts/bench`:
 cd scripts/bench
 ```
 
-The lifecycle scripts currently target the existing Alice deployment. Some scripts
+The lifecycle scripts currently target the configured test deployment. Some scripts
 still contain machine-specific paths, service names, network settings, and a base
 image ID. Review `bench_lifecycle.py`, `deploy-source.sh`, `prepare-node.py`,
 `prepare-storage.py`, and `run-bench.py` before using another machine. Relative
