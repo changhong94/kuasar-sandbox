@@ -379,6 +379,13 @@ def check():
         steps = {step.get("name"): step for step in lanes[name]["steps"]}
         assert steps["Download trusted native archive readers"]["with"]["name"] == "integration-readers-${{ inputs.arch }}-${{ github.run_id }}"
         assert "sha256sum --check SHA256SUMS" in steps["Verify and select the prebuilt archive readers"]["run"]
+    resolve_steps = integration['resolve']['steps']
+    resolve_names = [row.get('name') for row in resolve_steps]
+    assert resolve_names.index('Validate reusable workflow request') < resolve_names.index('Resolve declared companions for the read-only framework PR') < resolve_names.index('Validate exact source admission')
+    companion_step = next(row for row in resolve_steps if row.get('id') == 'companions')
+    assert companion_step['if'] == "inputs.mode == 'source' && github.event_name == 'pull_request'"
+    final_source = next(row for row in integration['results']['steps'] if row.get('name') == 'Recheck the current exact source candidate before acceptance')
+    assert final_source['env']['COMPANION_CANDIDATES'] == '${{ needs.resolve.outputs.companions }}'
     aggregate = load("aggregate-release.yml")["jobs"]
     assert aggregate["helper-build"]["needs"] == "prepare"
     assert aggregate["collect"]["needs"] == ["prepare", "helper-build"]

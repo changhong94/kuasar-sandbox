@@ -125,6 +125,11 @@ Partial reruns reuse successful artifacts only for the same immutable plan and
 workflow run. Receipts retain their actual producer attempt; a new failed or
 cancelled execution prevents collection even if an earlier result exists.
 
+The existing same-repository framework PR entry resolves companion declarations
+from its admitted event using read-only public metadata. It uses the same live
+merge/head/base and branch checks before execution and final acceptance; caller-
+supplied companion records remain forbidden on that entry.
+
 Requirements must first be present in the selected component versions. A mixed
 old/new source set fails instead of treating absent declarations as empty.
 Wholly historical inputs retain the historical plan path; after a schema 4
