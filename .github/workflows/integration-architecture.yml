@@ -249,7 +249,6 @@ jobs:
     env:
       TARGET_ARCH: ${{ inputs.arch }}
       TEST_SHARD: ${{ matrix.group.id }}
-      EXECUTION_RUNNER_ENVIRONMENT: ${{ runner.environment }}
     steps:
       - name: Check out only the trusted executor
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -294,6 +293,7 @@ jobs:
           echo "KUASAR_RUNTIME_READER=$GITHUB_WORKSPACE/readers/runtime-payloads.py" >> "$GITHUB_ENV"
       - name: Run the selected capability group from immutable inputs
         env:
+          EXECUTION_RUNNER_ENVIRONMENT: ${{ runner.environment }}
           TASK_ROOT: ${{ runner.temp }}/e2e-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.arch }}-${{ matrix.group.id }}
         run: |
           python3 -B framework/ci/integration/transport.py extract transport/prepared.tar.gz prepared

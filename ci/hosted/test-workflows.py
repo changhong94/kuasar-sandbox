@@ -363,6 +363,7 @@ def check():
         actual = expression(lanes['e2e']['runs-on'], {'matrix': {'group': {'runs_on': profile['runs_on']}}})
         assert actual == profile['runs_on']
     e2e_steps = {step.get('name'): step for step in lanes['e2e']['steps']}
+    assert e2e_steps["Run the selected capability group from immutable inputs"]["env"]["EXECUTION_RUNNER_ENVIRONMENT"] == "${{ runner.environment }}"
     assert e2e_steps['Bootstrap declared native execution profile']['if'] == "matrix.group.executor == 'native'"
     assert e2e_steps["Release only this group's Workbench resources"]['if'] == "always() && matrix.group.executor == 'workbench-system'"
     building = {step.get("name"): step for step in lanes["build"]["steps"]}
