@@ -6,15 +6,15 @@
 
 平台仓维护 `ci-entry.yml`、`integration-tests.yml` 和 `integration-architecture.yml`。
 组件 PR 保留 `ci-entry.yml@main` 薄入口，由 GitHub 在每轮固定框架版本。
-所有 hosted job，包括 admission、协调、发布、finalize 和 cleanup，都在分配 runner 前检查可信事件中的实际调用仓库：
+所有 job，包括 admission、协调、发布、finalize 和 cleanup，都在分配 runner 前检查可信事件中的实际调用仓库：
 
 ```yaml
 if: github.event.repository.visibility == 'public' && github.event.repository.full_name == github.repository
 ```
 
 公开的 reusable workflow 提供方、候选输入或 companion 不能授权 private/internal/未知调用方。
-非公开调用不分配 hosted job，也不构成成功验收。没有私有 ARM 队列、新私有适配、larger/付费 fallback。
-既有 runner 运维资料仍在 [ci/runner](../ci/runner/README.md)，新流程不修改其服务。
+非公开调用不分配 job，也不构成成功验收。公开调用方可以依据可信 profile 政策，
+为能力匹配的补充 E2E 分组分配 Runner。接入及运维资料见 [ci/runner](../ci/runner/README_zh.md)。
 
 组件调用方和平台 fork 使用可信 main 上的 `pull_request_target` 控制流程，只接受 `main` 和 `release/vMAJOR.MINOR.x`。非 draft 的组件同仓 PR 自动准入；
 fork 准入仍查询当前 active 组织成员身份，不能以 `author_association` 代替。
@@ -30,7 +30,7 @@ draft 不分配产品 job。组件和 fork 调用方保留既有可信 admission
 Admission 失败或 Draft 延迟执行时，可信 finalizer 不得成功结束。除 PR 元数据和 integration commit 的有序双亲外，还会重新读取主候选目标分支 ref，避免缓存的 PR 响应让旧 base 被误验收。可信 finalize 还复用当前 source-set 校验器比较有效 companion 声明；无关正文编辑不会使候选失效。每个已选择的源码/架构阶段都必须实际成功；Actions 的 skipped 或 neutral 状态不是产品验证。服务端 required-check 配置与工作流结果是两个独立控制点，需要一起核对。非成员 Fork 的处理见[外部贡献接收流程](../CONTRIBUTING_zh.md#ci-准入与外部贡献)；重跑被拒绝的 Fork 不会改变作者成员身份。本契约不新增批准票数或特定评审机器人要求。
 
 App key 和短期控制 token 只进入受信任的 admission/finalize 与发布控制 job。
-产品/helper 构建、源码检查、prepare、E2E 都不接收 App key，候选代码在新的标准 job 执行。
+产品/helper 构建、源码检查、prepare、E2E 都不接收 App key，候选代码在新的公共 job 或补充 E2E 分组所属的新 Workbench 实例中执行。
 公开发行源码按所选 Tag 获取；候选分支/PR ref 按自动观测的身份准入，并通过固定运行 artifact 传递。checkout 不保留凭据；Actions token 只用于可信 API/下载步骤。
 publish 使用独立 job 和写权限。
 
@@ -84,6 +84,44 @@ Go EROFS runtime 的 bundle 只需包含 init、envd 和 flatten-ctl，新的聚
 go-erofs 模块记录选择合同，无须执行该二进制或安装 Go。宿主 runtime 打包、
 独立 fsck 及原生对照测试仍保留所需工具。
 
+### 按能力分配 E2E
+
+计划 schema 4 将应执行用例选择与执行位置分开。它从六个已选 owner 源码树发现头部声明，
+固定用例摘要、需求、可信 `ci/integration/runner-capabilities.json` 配置及摘要、
+执行器镜像 ID、run/attempt 和确定性分组。schema 2/3 的旧计划与已发布结果继续保留
+原 ARM 选择范围和 Workbench 资格含义。
+
+profile 声明架构、Runner 标签、执行器、资源预算、优先级、启用状态以及每项能力证据。
+`supported` 可满足需求，`unsupported` 表示已知缺口，`unknown` 两者都不代表。
+所有需求均满足后，优先公共 Runner，再按优先级及 profile ID 确定顺序。
+每次补充分配必须记录**每个**已启用公共候选至少一项必需能力已知不支持。
+公共候选只有 unknown 时阻止分配。资源禁用或不可用不会使必需用例变成可选。
+用例元数据不能指定标签、镜像、命令、优先级或凭据。运行时专用容器不支持 `systemd` 或 `journald`，
+即使其宿主支持也不能满足该需求。
+
+分组依据 profile、suite 和有效运行环境生成，互斥并集必须等于普通 suite 选择的用例，
+带凭据 OBS 仍需显式启用。公共 build、helper、prepare、source 和 performance 的分配
+保持不变。source 与 exact-assets 模式都在公共侧一次准备所有分组的并集。
+prepare 导出已经构建的运行时镜像并绑定压缩归档摘要；执行前验证归档和镜像配置身份，
+再加载镜像。执行分组不重建产品。
+
+补充分组使用现有 Workbench system launcher。宿主 Actions 步骤校验并传输固定输入，
+随后在所属实例中调用现有公共 E2E 入口。storage、snapshot 和 ARM image 分组继续使用
+嵌套的运行时专用容器，不含编译器或组件源码树。Runner 凭据和宿主 Docker socket 不挂入
+Workbench。能力启动检查发生在有效运行环境中，结果绑定实际 Runner 名称、系统、架构、
+环境类型、run/attempt、profile/配置、prepared provenance 和执行器镜像。
+架构及最终门禁要求每个非空分组成功；失败、取消、缺失结果或身份变化均不能变成成功。
+空组不分配 Runner，也不宣称完成 E2E。部分重跑只复用同一不可变计划和 workflow run
+中的成功产物；回执保留实际生产 attempt。新的失败或取消会阻止收集，不能借用旧成功。
+
+所选组件版本必须先携带需求声明。新旧混合源码集明确失败，不能将缺失声明解释为空需求。
+完全历史输入保留历史计划路径；基线升级 schema 4 后不能降级需求格式。
+启用标为 `unknown` 的能力前，须通过现有 prepare/run 完成实际产品验收，并在可信配置中
+补充证据。不增加常驻能力探测矩阵，也不在失败后自动转投其他资源。
+联合 E2E 覆盖不会改变 artifact-only 或单实例 native-full Workbench 资格。
+参见 [Runner 接入](../ci/runner/README_zh.md#capability-e2e-runners)
+和[用例声明](../test/README_zh.md#静态执行需求)。
+
 ## 3. 两条独立架构生命周期
 
 ```text
@@ -134,7 +172,7 @@ source 模式 x86 sandboxer/platform 还在独立性能 job 中，用同一组�
 CI 启动已选 prepared case 时直接提供 root 权限和可信工具路径。跨 `sudo` 只传递显式准备的输入（包括私有状态目录）；执行不读取生成的 owner-runner registry。
 
 所有非空 lane 都在没有 Go、Rust、C/C++ 编译器及组件源码树的运行时容器中 prepare。完整 storage 和 snapshot 套件也在该容器中执行，
-覆盖非 KVM 和 KVM 合同；适用的原生 ARM image 用例使用相同边界。需要 host systemd 的用例保留原生 host job。
+覆盖非 KVM 和 KVM 合同；适用的原生 ARM image 用例使用相同边界。需要 systemd 的用例在所选原生 host 或 Workbench system 实例中执行。
 可信预检和结果记录绑定不可变运行时镜像 ID，以及编译器/源码树缺失的验证证据；零用例静态 lane 不算产品验收。
 容器输入只读，可变用例目录和输出目录独立。
 
@@ -182,7 +220,7 @@ plan 固定提交清单与暂存的十四项资产（platform + 十二个组件�
 
 publish 再次核对双架构成功结果与暂存摘要，原样发布归档，不重新编译。
 许可证/材料、源码身份、受信任 publisher 标记及版本不可变约束继续适用。
-ARM 非 KVM 范围在执行前和 aggregate 验证绑定中声明，不等同完整 VM 验收。
+精确 ARM 选择与能力分组在执行前及 aggregate 验证绑定中声明；历史非 KVM 证据仍限定于原范围。
 
 ## 5. Native cache
 
@@ -240,7 +278,7 @@ provenance 记录基线资产、产品来源/hash、精确源码/测试/框架�
 ## 7. 首轮覆盖与切换
 
 架构/owner/用例、缺失原因、已执行证据和后续事项集中在唯一的 [首轮覆盖表](ci.md#7-initial-coverage-and-rollout-evidence)。
-ARM 当前只选择 accelerator 和 guest-runtime 已有独立非 KVM 套件；其余 owner 明确未选 E2E。
+以下历史 ARM 验收仅选择 accelerator 和 guest-runtime 已有独立非 KVM 套件，其余 owner 当时未选 E2E；schema 4 的能力路由不改写这些历史证据。
 ARM VM/KVM/restore/Builder/cluster 同等覆盖、新硬件和全面用例扩充属于后续工作。
 已选测试失败不能事后改为 unsupported，整个 ARM job 不使用 continue-on-error。
 

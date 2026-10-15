@@ -347,11 +347,24 @@ def check():
         assert lane["with"]["arch"] == arch
     assert lanes["prepare"]["needs"] == "build"
     assert lanes["e2e"]["needs"] == ["build", "prepare"]
-    assert "matrix.shard" in lanes["e2e"]["concurrency"]["group"]
+    assert "matrix.group.id" in lanes["e2e"]["concurrency"]["group"]
     assert "inputs.arch" in lanes["e2e"]["concurrency"]["group"]
+    assert "github.run_attempt" in lanes["e2e"]["concurrency"]["group"]
     for arch, runner in (("x86_64", "ubuntu-24.04"), ("aarch64", "ubuntu-24.04-arm")):
-        for name in ("build", "prepare", "e2e", "performance"):
+        for name in ("build", "prepare", "performance"):
             assert expression(lanes[name]["runs-on"], {"inputs": {"arch": arch}}) == runner
+    # Only E2E allocation may select a supplemental profile, from the trusted
+    # build job's validated plan. All other lane allocations remain hosted.
+    assert lanes['e2e']['runs-on'] == '${{ matrix.group.runs_on }}'
+    assert lanes['e2e']['strategy']['matrix'] == {'group': '${{ fromJSON(needs.build.outputs.shards) }}'}
+    assert "needs.build.outputs.has_groups == 'true'" in lanes['e2e']['if']
+    profile_config = json.loads((ROOT / 'ci/integration/runner-capabilities.json').read_text())
+    for profile in profile_config['profiles'].values():
+        actual = expression(lanes['e2e']['runs-on'], {'matrix': {'group': {'runs_on': profile['runs_on']}}})
+        assert actual == profile['runs_on']
+    e2e_steps = {step.get('name'): step for step in lanes['e2e']['steps']}
+    assert e2e_steps['Bootstrap declared native execution profile']['if'] == "matrix.group.executor == 'native'"
+    assert e2e_steps["Release only this group's Workbench resources"]['if'] == "always() && matrix.group.executor == 'workbench-system'"
     building = {step.get("name"): step for step in lanes["build"]["steps"]}
     for name in ("Build trusted native archive readers in Workbench", "Build the affected delta and test helpers once"):
         assert building[name]["uses"] == "./framework/.github/actions/workbench"
@@ -422,7 +435,8 @@ def check():
     executor = json.dumps(lanes["e2e"])
     for forbidden in ("create-github-app-token", "go build", "cargo build", "source-owner.sh build", "src/platform"):
         assert forbidden not in executor, forbidden
-    assert "run-artifact-tests.py" in executor
+    assert "run-capability-group.py" in executor
+    assert 'run-artifact-tests.py' in (ROOT / 'ci/integration/run-capability-group.py').read_text()
     assert "sparse-checkout" in executor
     source_job = integration["source-checks"]
     assert source_job["needs"] == "resolve"

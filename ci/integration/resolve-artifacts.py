@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 import artifacts
 import workbench_groups
+import capability_routing
 import source_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -78,6 +79,9 @@ def bound_plan(binding, version, sha, assets, runs):
         artifacts.require(len(plans) == 1, 'missing or ambiguous original validated integration-plan evidence')
         plan = plans[0]
     artifacts.require(artifacts.identity(plan) == binding.get('plan_id'), 'published plan identity mismatch')
+    if plan.get('schema') == 4:
+        artifacts.check_plan(plan)
+        artifacts.collect_results(plan, binding['architectures'])
     artifacts.require(plan.get('mode') == 'exact-assets' and plan['baseline']['version'] == version
                       and plan['baseline']['sha'] == sha and plan['framework_sha'] == binding['framework_sha']
                       and plan['test_revisions'] == binding['test_revisions'], 'published plan provenance mismatch')
@@ -93,7 +97,7 @@ def bound_plan(binding, version, sha, assets, runs):
     # reading historical independent test sources.
     for arch, result in binding['architectures'].items():
         original_selection = plan['lanes'][arch].get('selection')
-        artifacts.require(artifacts.compatible_suite_selection(original_selection, ['platform'], arch, selected_cases)
+        artifacts.require((plan['schema'] >= 4 or artifacts.compatible_suite_selection(original_selection, ['platform'], arch, selected_cases))
                           and result.get('selection') == original_selection
                           and result.get('plan_id') == binding['plan_id'], 'published case selection differs from original plan')
     for result in binding.get('workbench', {}).values():
@@ -202,7 +206,7 @@ def aggregate(version, *, require_dual=True):
         for arch, result in binding["architectures"].items():
             if 'selection' in result:
                 actual = result['selection']
-                artifacts.require(artifacts.compatible_suite_selection(actual, ['platform'], arch, selected_files),
+                artifacts.require((evidence['schema'] >= 4 or artifacts.compatible_suite_selection(actual, ['platform'], arch, selected_files)),
                                   'published case selection changed')
                 expected = evidence['lanes'][arch]['selection']
             else:
@@ -414,6 +418,10 @@ def source_plan(framework_sha, input_root):
                 identities, historical_platform, run_id, helper_history.api, helper_history.gh, Path(temporary))
     else:
         plan['helper_contract'] = helper_inputs.discover(roots, identities)
+    requirements = artifacts.capabilities_module().discover(roots, selected_files)
+    artifacts.require(not (isinstance(original, dict) and original.get('schema', 0) >= 4) or requirements is not None,
+                      'selected sources cannot downgrade the E2E requirement generation')
+    capability_routing.apply(plan, requirements)
     artifacts.check_plan(plan)
     return plan
 
@@ -433,6 +441,7 @@ def exact_assets_plan(framework_sha, stage):
         identities = {owner: source_records[unit] for owner, unit in source_inputs.tag_sources.OWNER_UNITS.items()}
         identities['platform'] = platform_record
         helper_contract = helper_inputs.discover(roots, identities)
+        case_requirements = artifacts.capabilities_module().discover(roots, selected_files)
     selected, _, units = release.selection.parse_manifest(manifest, relative, "-preview." in version)
     tests = artifacts.release_test_revisions(source_inputs.tag_sources.owner_revisions(source_records), sha)
     artifacts.require(selected == version, "staged aggregate is not selected by its exact platform source")
@@ -467,6 +476,7 @@ def exact_assets_plan(framework_sha, stage):
             "lanes": {arch: {"products": [], "embedded_products": [], "performance": [],
                              "selection": artifacts.suite_selection(["platform"], arch, selected_files)}
                       for arch in artifacts.ARCHES}}
+    capability_routing.apply(plan, case_requirements)
     artifacts.check_plan(plan)
     return plan
 

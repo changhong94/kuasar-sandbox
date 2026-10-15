@@ -211,6 +211,7 @@ jobs:
             python3 -B framework/ci/hosted/workbench.py select --framework-sha "$FRAMEWORK_SHA" \
               --plan plan.json --output workbench.json
           fi
+          python3 -B framework/ci/integration/capability_routing.py --plan plan.json --selection workbench.json
           source_schedule=all
           if [ "$SOURCE_CHECK_GROUPS" = true ]; then source_schedule=grouped; fi
           source_groups=$(python3 -B framework/ci/integration/source_results.py --plan plan.json --schedule "$source_schedule")
