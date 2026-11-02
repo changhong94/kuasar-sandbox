@@ -153,3 +153,10 @@ Default cleanup and `--build-only` reverse the patches after cleaning build outp
 already-removed patches are skipped. `--deployment-only` leaves patches in place.
 Reverse applicability is checked before teardown, and unrelated source edits are retained.
 Patch management does not change Git HEAD or create commits.
+
+## Kuasar / CubeSandbox single-node comparison
+
+See [the comparison suite](comparison/README.md) for reproducible storage,
+memory, cache/prefetch and density experiments against existing isolated release
+deployments. This suite is separate from the source-build timing-patch workflow;
+it neither deploys products nor runs cross-node tests.

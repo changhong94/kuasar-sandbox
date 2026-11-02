@@ -136,3 +136,9 @@ python3 clear-bench.py --build-only       # 部署仍在运行时拒绝执行
 默认清理和 `--build-only` 在清理构建产物后反向撤销补丁；已撤销则跳过。
 `--deployment-only` 保留补丁。停止部署前会检查能否安全撤销，并保留不相关的源码修改。
 补丁管理不改变 Git HEAD，也不创建提交。
+
+## Kuasar / CubeSandbox 单节点对比
+
+参见[对比测试套件](comparison/README.zh-CN.md)：针对现有独立 release 部署，
+重测存储、内存、缓存／预取和密度。该套件与源码构建及计时补丁流程分开，
+不负责产品部署，不执行双节点测试。

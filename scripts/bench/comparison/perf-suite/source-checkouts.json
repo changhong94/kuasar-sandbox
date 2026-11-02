@@ -1,0 +1,75 @@
+[
+  {
+    "org": "kuasar-sandbox",
+    "repo": "kuasar-sandbox",
+    "path": "/home/hong/src/kuasar-sandbox/perf-release-v0.1.6/kuasar-sandbox",
+    "base_commit": "387fba8d1e352843b55ac90d5d22569d11450bf7",
+    "version": "release-v0.1.6",
+    "branch": "bench/perf-telemetry-20261030",
+    "clean": true
+  },
+  {
+    "org": "kuasar-sandbox",
+    "repo": "accelerator",
+    "path": "/home/hong/src/kuasar-sandbox/perf-release-v0.1.6/accelerator",
+    "base_commit": "e3267df537066dbfbe1db2a0c7c5a5e82c2341a1",
+    "version": "v0.1.6",
+    "branch": "bench/perf-telemetry-20261030",
+    "clean": true
+  },
+  {
+    "org": "kuasar-sandbox",
+    "repo": "sandboxer",
+    "path": "/home/hong/src/kuasar-sandbox/perf-release-v0.1.6/sandboxer",
+    "base_commit": "de4e1ed289818fe4be7e205daae5097963ee583d",
+    "version": "v0.1.6",
+    "branch": "bench/perf-telemetry-20261030",
+    "clean": true
+  },
+  {
+    "org": "kuasar-sandbox",
+    "repo": "guest-runtime",
+    "path": "/home/hong/src/kuasar-sandbox/perf-release-v0.1.6/guest-runtime",
+    "base_commit": "f9005b758e2aab8f89a28905e0378ed4c4c2b15f",
+    "version": "runtime-v0.1.6",
+    "branch": "bench/perf-telemetry-20261030",
+    "clean": true
+  },
+  {
+    "org": "kuasar-sandbox",
+    "repo": "orchestrator",
+    "path": "/home/hong/src/kuasar-sandbox/perf-release-v0.1.6/orchestrator",
+    "base_commit": "ab4b0c8143ce7004a24dffd5f2ceadfc9cce8ab3",
+    "version": "v0.1.6",
+    "branch": "bench/perf-telemetry-20261030",
+    "clean": true
+  },
+  {
+    "org": "kuasar-sandbox",
+    "repo": "connector",
+    "path": "/home/hong/src/kuasar-sandbox/perf-release-v0.1.6/connector",
+    "base_commit": "87b6d8912c0f8999d38b3da778cf6ea71ee65d1f",
+    "version": "v0.1.5",
+    "branch": "bench/perf-telemetry-20261030",
+    "clean": true
+  },
+  {
+    "org": "TencentCloud",
+    "repo": "CubeSandbox",
+    "path": "/home/hong/src/TencentCloud/CubeSandbox-perf-v0.7.3",
+    "base_commit": "4411c96ba8658a959de34693f54f4918db2a432f",
+    "version": "v0.7.3",
+    "branch": "bench/perf-telemetry-20261030",
+    "clean": true
+  },
+  {
+    "org": "kvcache-ai",
+    "repo": "AgentENV",
+    "path": "/home/hong/src/kvcache-ai/AgentENV",
+    "base_commit": "9f62cbe07cebfecf416dc9bdcf497e2a97687644",
+    "version": "v0.2.4",
+    "branch": "bench/perf-telemetry-20261030",
+    "history": "shallow release checkout",
+    "clean": true
+  }
+]

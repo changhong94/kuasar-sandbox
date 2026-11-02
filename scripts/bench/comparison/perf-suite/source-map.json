@@ -1,0 +1,39 @@
+{
+  "purpose": "Version-pinned source entry points for future instrumentation; no product source modified yet",
+  "kuasar": {
+    "root": "/home/hong/src/kuasar-sandbox/perf-release-v0.1.6",
+    "release": "release-v0.1.6",
+    "paths": [
+      "orchestrator/internal/orch/orch.go",
+      "orchestrator/internal/orch/sandbox_task_prepare.go",
+      "sandboxer/pkg/restore/restore.go",
+      "accelerator/pkg/cache",
+      "accelerator/pkg/manifest"
+    ],
+    "investigate": ["admission and scheduling", "runtime readiness", "restore notification", "lazy faults and prefetch", "shared cache CPU/memory"]
+  },
+  "cube": {
+    "root": "/home/hong/src/TencentCloud/CubeSandbox-perf-v0.7.3",
+    "release": "v0.7.3",
+    "paths": [
+      "CubeShim/shim/src/hypervisor/snapshot.rs",
+      "CubeShim/shim/src/snapshot",
+      "CubeTemplateCenter/pkg/image/layercache.go",
+      "cube-lifecycle-manager"
+    ],
+    "investigate": ["snapshot mapping and restore", "lifecycle scheduling", "image conversion/cache", "shared controller resource attribution"]
+  },
+  "agentenv": {
+    "root": "/home/hong/src/kvcache-ai/AgentENV",
+    "release": "v0.2.4",
+    "paths": ["config/default.toml", "src/cfg.rs", "crates/warm-pool/src/lib.rs"],
+    "investigate": ["network/block/Firecracker pools", "startup prewarming", "pool refill and saturation", "memory snapshot prefetch"]
+  },
+  "next_steps": [
+    "Read repository AGENTS.md before modifying product code",
+    "Prefer existing counters before adding per-request logs",
+    "Capture request ID and monotonic phase spans; parallel phases cannot simply be summed",
+    "Build changed binaries into an isolated deployment and keep release baseline intact",
+    "Measure telemetry-enabled versus disabled overhead before interpreting short latencies"
+  ]
+}
