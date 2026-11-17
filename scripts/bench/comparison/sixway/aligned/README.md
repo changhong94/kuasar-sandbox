@@ -82,3 +82,13 @@ stream/cleanup paths are unit-tested. The old 300 Python samples were re-read
 with the generalized summarizer and retained their statistics. This code change
 does not claim a new six-product Node/Ruby performance result: those require
 preparing the corresponding six templates and running the matrix.
+
+## Completed 113 three-language run
+
+The host-specific preparation, mlink per-language policy switching, matrix
+orchestration and independent-destruction checks for the completed 900-sample
+run are in [hosts/113/tools/three-language-20261117](../hosts/113/tools/three-language-20261117/README.md).
+That runner handles the shared mlink storage budget between languages; the
+generic wrapper above does not switch deployment policies automatically.
+The shared collector in this directory was unchanged. PDF/report generation
+and output artifacts are intentionally excluded from that code archive.
