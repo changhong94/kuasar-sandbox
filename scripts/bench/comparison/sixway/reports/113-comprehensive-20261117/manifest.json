@@ -1,0 +1,77 @@
+{
+  "pdf": "113-sixway-comprehensive-report-zh.pdf",
+  "pages": 13,
+  "sha256": "749099593a969925bb2cdc75ad706a1b31593abbcedb4d8e37c6086fc99480bc",
+  "batches": {
+    "A": "/home/huawei/codex-work/sixway-aligned-113/results",
+    "B": "/home/huawei/codex-work/sixway-languages-113/results"
+  },
+  "sections": [
+    [
+      1,
+      "113 六方沙箱综合基准报告",
+      1
+    ],
+    [
+      1,
+      "测试批次与覆盖矩阵",
+      2
+    ],
+    [
+      1,
+      "统一口径与镜像身份",
+      3
+    ],
+    [
+      1,
+      "Python：ready 与 print 分布",
+      4
+    ],
+    [
+      1,
+      "Node.js：ready 与 print 分布",
+      5
+    ],
+    [
+      1,
+      "Ruby：ready 与 print 分布",
+      6
+    ],
+    [
+      1,
+      "请求后的销毁与补槽",
+      7
+    ],
+    [
+      1,
+      "模板、缓存与准备成本",
+      8
+    ],
+    [
+      1,
+      "执行性能与 CPU/IO",
+      9
+    ],
+    [
+      1,
+      "生命周期：暂停、恢复与独立销毁",
+      10
+    ],
+    [
+      1,
+      "50 实例内存扩展",
+      11
+    ],
+    [
+      1,
+      "双沙箱存储与共享",
+      12
+    ],
+    [
+      1,
+      "资源测试准备与最终验证",
+      13
+    ]
+  ],
+  "status": "final report authorized for publication"
+}
