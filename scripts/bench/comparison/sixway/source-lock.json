@@ -1,0 +1,37 @@
+{
+  "implementation_branch": "sandbox_fork",
+  "repositories": [
+    {
+      "org": "cloud-hypervisor",
+      "name": "cloud-hypervisor",
+      "head": "dd6fd577446f029e080a2e9d6eca7b24482eddce",
+      "repository": "https://github.com/changhong94/cloud-hypervisor.git"
+    },
+    {
+      "org": "kuasar-io",
+      "name": "kuasar",
+      "head": "0b646f26dfdb480719374465af3fde10be56c9f9",
+      "repository": "https://github.com/changhong94/kuasar.git"
+    },
+    {
+      "org": "kuasar-io",
+      "name": "containerd",
+      "head": "67e675e29bf67673569fd172fe8bb0b28eb84df0",
+      "repository": "https://github.com/changhong94/containerd.git"
+    },
+    {
+      "org": "kuasar-io",
+      "name": "rust-extensions",
+      "head": "4035de54b7e22bb9863079bbe401954a962151cb",
+      "repository": "https://github.com/changhong94/rust-extensions.git"
+    },
+    {
+      "org": "kuasar-io",
+      "name": "ttrpc-rust",
+      "head": "f8518ee36c88e07e6902f6c915bf6b2334b13a30",
+      "repository": "https://github.com/changhong94/ttrpc-rust.git"
+    }
+  ],
+  "bench_branch": "bench",
+  "scope": "Source synchronization only. Deployed binaries, runtime disks and per-host template IDs are separate deployment artifacts; rebuilding/redeploying is not implied by checking out these commits."
+}
