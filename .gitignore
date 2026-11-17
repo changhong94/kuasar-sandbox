@@ -4,3 +4,8 @@
 /test/results/
 __pycache__/
 *.pyc
+
+# Local six-way deployment credentials and generated benchmark output.
+scripts/bench/comparison/sixway/**/private/
+scripts/bench/comparison/sixway/**/config.local*.json
+scripts/bench/comparison/sixway/**/results/

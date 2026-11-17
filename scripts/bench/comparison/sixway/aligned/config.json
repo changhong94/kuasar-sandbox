@@ -1,0 +1,124 @@
+{
+  "_image_digest": "sha256:2fe5997d249a808b8eeea52c58a1dbffbba28754dc11699ef5c029f2d818ce79",
+  "kuasar-off": {
+    "kind": "e2b",
+    "netns": "bench113",
+    "key_file": "/home/hong/src/research/sixway-aligned-20261117/private/kuasar-off",
+    "template": "e2b-snp-bWFuaWZlc3Q6Ly9kMzE3NjY5NjNlMzUzMTE4YWNkNzRmODQ4ZDg3NTI2ZDQ1Yjg0NjdiZmNhMWVjMWU5MjA1MWViNzg0ZTBjYmNm",
+    "create_kwargs": {
+      "metadata": {
+        "kuasar-sandbox.restore": "{\"prefetch\":\"off\"}",
+        "kuasar-sandbox.resource": "{\"capacity\": {\"cpu\": 2, \"memory\": \"2048MiB\"}, \"allocatable\": {\"cpu\": 2, \"memory\": \"2048MiB\"}}"
+      }
+    },
+    "domain": "sandboxes.compare.local",
+    "ca_file": "/home/hong/data/comparison/cube-xfs/kuasar/runs/72667ef527/demo-ca.crt",
+    "proxy_address": "127.0.0.2",
+    "api_url": "https://api.sandboxes.compare.local",
+    "resource_cgroup_patterns": [
+      "kuasar-comparison",
+      "bench-kuasar-off-",
+      "kuasar-demo-"
+    ],
+    "resource_cgroup_exclude": [
+      "uffd113abc"
+    ]
+  },
+  "kuasar-uffd": {
+    "kind": "e2b",
+    "netns": "bench113-u",
+    "key_file": "/home/hong/src/research/sixway-aligned-20261117/private/kuasar-uffd",
+    "template": "e2b-snp-bWFuaWZlc3Q6Ly9jYzcwNDA5ZGQ5NzQwZGViZDFlYjlmZGJmZGYyYzNjNTdmZjljNmVlNzdhNzY5YTY0MzIzNWYxZmE0MDRlYTNh",
+    "create_kwargs": {
+      "metadata": {
+        "kuasar-sandbox.restore": "{\"prefetch\":\"off\"}",
+        "kuasar-sandbox.resource": "{\"capacity\": {\"cpu\": 2, \"memory\": \"2048MiB\"}, \"allocatable\": {\"cpu\": 2, \"memory\": \"2048MiB\"}}"
+      }
+    },
+    "domain": "sandboxes.uffd113.local",
+    "ca_file": "/home/hong/data/uffd/runs/uffd113abc/demo-ca.crt",
+    "proxy_address": "127.0.0.2",
+    "api_url": "https://api.sandboxes.uffd113.local",
+    "resource_cgroup_patterns": [
+      "bench-private-uffd",
+      "kuasar-demo-uffd113abc"
+    ]
+  },
+  "cube": {
+    "kind": "e2b",
+    "netns": "bench113",
+    "key_file": "/home/hong/src/research/sixway-formal-python-113/private/cube",
+    "template": "tpl-9b540bfc02c0465aa3deaab6",
+    "create_kwargs": {},
+    "domain": "cube.app:18443",
+    "ca_file": "/root/.local/share/mkcert/rootCA.pem",
+    "proxy_address": "127.0.0.1",
+    "api_url": "http://127.0.0.1:3000",
+    "resource_cgroup_patterns": [
+      "cube-sandbox-",
+      "/cube_sandbox/"
+    ]
+  },
+  "agentenv": {
+    "kind": "e2b",
+    "netns": "bench113",
+    "key_file": "/home/hong/src/research/sixway-formal-python-113/private/agentenv",
+    "template": "aligned-python-2cpu-v3",
+    "create_kwargs": {},
+    "api_url": "http://127.0.0.1:18000",
+    "sandbox_url": "http://127.0.0.1:18000",
+    "resource_cgroup_patterns": [
+      "agentenv-comparison"
+    ]
+  },
+  "kuasar-mlink": {
+    "kind": "mlink",
+    "netns": "bench113-m-generic",
+    "template": "snap_77w2ybrwknsea07bhvxq7fz8z6",
+    "ctl": [
+      "/home/hong/src/private/kuasar-mlink/test_deps/bin/ttctl",
+      "--server",
+      "http://127.0.0.1:29080",
+      "--data-server",
+      "http://127.0.0.1:29081",
+      "--admin-server",
+      "http://127.0.0.1:29082",
+      "--config",
+      "/home/hong/data/mlink-generic/client.json",
+      "--request-timeout",
+      "60"
+    ],
+    "pool_kind": "mlink",
+    "resource_cgroup_patterns": [
+      "bench-mlink-generic"
+    ]
+  },
+  "kuasar-fork": {
+    "kind": "e2b",
+    "netns": "py113-fork",
+    "key_file": "/home/hong/src/research/python-latest-113/deploy/fork/api-key",
+    "api_url": "http://127.0.0.1:18887",
+    "sandbox_url": "http://127.0.0.1:18887",
+    "template": "base",
+    "pool_kind": "fork",
+    "resource_cgroup_patterns": [
+      "bench-python113-fork"
+    ]
+  },
+  "_profile": {
+    "vcpus": 2,
+    "memory_mib": 2048,
+    "startup_pool_capacity": 2,
+    "warmup_samples": 1,
+    "startup_samples": 50,
+    "concurrency": 1,
+    "cache_policy": "no global cache reset; no guest Python in template preparation or training",
+    "readiness": "native shell marker then fresh Python in same exec stream; internal server ready separately where exposed",
+    "pool_unsupported": [
+      "kuasar-off",
+      "kuasar-uffd",
+      "cube",
+      "agentenv"
+    ]
+  }
+}

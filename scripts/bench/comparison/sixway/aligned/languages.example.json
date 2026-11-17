@@ -1,0 +1,40 @@
+{
+  "_languages": {
+    "python": {
+      "image": "python:3.12-slim",
+      "digest": "sha256:2fe5997d249a808b8eeea52c58a1dbffbba28754dc11699ef5c029f2d818ce79",
+      "templates": {
+        "kuasar-off": "<prepared-python-kuasar-off-template>",
+        "kuasar-uffd": "<prepared-python-kuasar-uffd-template>",
+        "agentenv": "<prepared-python-agentenv-template>",
+        "cube": "<prepared-python-cube-template>",
+        "kuasar-mlink": "<prepared-python-kuasar-mlink-template>",
+        "kuasar-fork": "<prepared-python-kuasar-fork-template>"
+      }
+    },
+    "node": {
+      "image": "node:22-bookworm-slim",
+      "digest": "sha256:47725aca53d3295ec2d3be8f62726599b3033cc262edc2c7e429909b3ac599fc",
+      "templates": {
+        "kuasar-off": "<prepared-node-kuasar-off-template>",
+        "kuasar-uffd": "<prepared-node-kuasar-uffd-template>",
+        "agentenv": "<prepared-node-agentenv-template>",
+        "cube": "<prepared-node-cube-template>",
+        "kuasar-mlink": "<prepared-node-kuasar-mlink-template>",
+        "kuasar-fork": "<prepared-node-kuasar-fork-template>"
+      }
+    },
+    "ruby": {
+      "image": "ruby:3.3-slim-bookworm",
+      "digest": "sha256:51d211cdbd0b226c7bbae9a377ed5731eaf2acb728000096061c01d360ed213d",
+      "templates": {
+        "kuasar-off": "<prepared-ruby-kuasar-off-template>",
+        "kuasar-uffd": "<prepared-ruby-kuasar-uffd-template>",
+        "agentenv": "<prepared-ruby-agentenv-template>",
+        "cube": "<prepared-ruby-cube-template>",
+        "kuasar-mlink": "<prepared-ruby-kuasar-mlink-template>",
+        "kuasar-fork": "<prepared-ruby-kuasar-fork-template>"
+      }
+    }
+  }
+}

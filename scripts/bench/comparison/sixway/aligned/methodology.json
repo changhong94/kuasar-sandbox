@@ -1,0 +1,77 @@
+{
+  "reference": "memlink-thinkprocess-test-suite/test-suite/startup-mode/run-compare.sh",
+  "startup": {
+    "vcpus": 2,
+    "memory_mib": 2048,
+    "pool_capacity_where_supported": 2,
+    "warmup": 1,
+    "measured_samples_per_product": 50,
+    "concurrency": 1,
+    "order": "rotate products each serial round",
+    "image_digest": "sha256:2fe5997d249a808b8eeea52c58a1dbffbba28754dc11699ef5c029f2d818ce79"
+  },
+  "metrics": {
+    "api_ms": "monotonic elapsed before create invocation to API/CLI return; not guest readiness",
+    "native_ready_ms": "create invocation to client receipt of native shell random marker on first exec stream",
+    "python_print_ms": "same create invocation to client receipt of complete Python random marker plus newline; includes interpreter startup",
+    "internal_ready_ms": "server log guest-ready milestone, only if observable and correlated by sandbox ID",
+    "native_to_python_ms": "client-observed marker interval, includes buffering/transport; not pure guest interpreter CPU time",
+    "pool_before": "state-based gate before timed request, recorded outside foreground",
+    "pool_after": "time after delete returns until pool is full and quiescent; 50 ms polling resolution",
+    "refill_events": "server work duration and replacement latency by retired sandbox ID where available"
+  },
+  "preparation": {
+    "guest_start_command": "native sleep or envd, no Python",
+    "warmup": "disposable sandbox; never recaptured into template",
+    "global_cache_drop": false,
+    "python_hotset_training": false,
+    "sdk_import": "outside foreground, cost recorded",
+    "image_import_template_capture_and_pool_preparation": "separate evidence; failed preparation attempts retained"
+  },
+  "pool_modes": {
+    "kuasar-mlink": "full-warm, profile-prepared L2 slots, full snapshot page cache, hot-ready-workers=0",
+    "kuasar-fork": "generic snapshot CoW resource pool, full guest/network readiness before lease; no per-image VM pool",
+    "kuasar-off": "native snapshot restore, prefetch off; equivalent pool/cache mode not exposed",
+    "kuasar-uffd": "native UFFD snapshot restore, prefetch off; equivalent pool/cache mode not exposed",
+    "cube": "native template snapshot restore; equivalent pool/cache mode not exposed",
+    "agentenv": "native template snapshot restore; equivalent pool/cache mode not exposed"
+  },
+  "scope_note": "Align startup-mode resource configuration and preparation/readiness accounting, not a claim that six unlike native architectures implement all six reference cache/restore modes. Unsupported modes are N/A. No global drop_caches or unrelated process changes.",
+  "retained_tests": {
+    "timing_rounds": 5,
+    "exec_per_round": 8,
+    "cpu_sha256_mib": 256,
+    "io_write_and_fsync_mib": 32,
+    "pressure_requests_per_round": 8,
+    "pressure_concurrency": 2,
+    "storage_rounds": 3,
+    "storage_instances": 2,
+    "memory_instances": 50,
+    "array_mib_per_instance": 20,
+    "array_modes": [
+      "default",
+      "100",
+      "random"
+    ]
+  },
+  "resource_profile": "For 50 simultaneous sandboxes, expand configurable pools from 2 to 64 after startup measurements and report preparation separately. Resource results use this larger profile.",
+  "statistics": "All 50 measured rows required; no trimming or best-round selection. Median uses midpoint; P95/P99 use nearest rank. Warmup retained as row 00 and excluded.",
+  "limitations": [
+    "PSS excludes unmapped host cache and kernel memory",
+    "Fork application writes use guest RAM overlay and persistent pause/resume is unsupported; do not infer durable-data IO superiority",
+    "Phase timers can overlap and must not be summed blindly",
+    "Host is shared; record load without killing other workloads"
+  ],
+  "languages": {
+    "supported": [
+      "python",
+      "node",
+      "ruby"
+    ],
+    "separate_samples": true,
+    "samples_per_language_per_product": 50,
+    "warmup_per_language_per_product": 1,
+    "metrics": "interpreter_print_ms and native_to_interpreter_ms; Python legacy aliases only for Python",
+    "preparation": "same image digest across products for each language; no interpreter execution in template preparation"
+  }
+}
