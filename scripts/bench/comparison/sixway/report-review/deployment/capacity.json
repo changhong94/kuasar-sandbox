@@ -1,0 +1,21 @@
+{
+  "reserves": 64,
+  "preparation_workers": 8,
+  "refill_workers": 8,
+  "mlink_total_slots": 320,
+  "mlink_max_waiters": 256,
+  "mlink_private_storage_capacity": 320,
+  "mlink_foreground_quiet_period_ms": 1000,
+  "mlink_adaptive_idle_policy": "native; initial minimum 64, observed target/ready recorded for every batch",
+  "off_network_ports": 512,
+  "uffd_network_ports": 512,
+  "off_uffd_runner_assignment_deadline_seconds": 5,
+  "cube_logical_quota": {
+    "mcpu": 640000,
+    "mem": "640Gi",
+    "instances": 320,
+    "create_concurrency": 256
+  },
+  "cube_api_rate_limit_per_second": 4096,
+  "physical_capacity_changed": false
+}

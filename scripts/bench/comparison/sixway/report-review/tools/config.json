@@ -1,0 +1,165 @@
+{
+  "_image_digest": "sha256:2fe5997d249a808b8eeea52c58a1dbffbba28754dc11699ef5c029f2d818ce79",
+  "kuasar-off": {
+    "kind": "e2b",
+    "netns": "bench113",
+    "key_file": "/home/hong/src/research/sixway-aligned-20261117/private/kuasar-off",
+    "template": "e2b-snp-bWFuaWZlc3Q6Ly8wNTBjMjA2ZGJiYmRiZmFkNGI1YWYwZWY0NjdmNGM1MWRiYWZlM2QzYWJlYjIyYTgyMmFkZTIwNzk1NDA0ZDMx",
+    "create_kwargs": {
+      "metadata": {
+        "kuasar-sandbox.restore": "{\"prefetch\":\"off\"}",
+        "kuasar-sandbox.resource": "{\"capacity\": {\"cpu\": 2, \"memory\": \"2048MiB\"}, \"allocatable\": {\"cpu\": 2, \"memory\": \"2048MiB\"}}"
+      }
+    },
+    "domain": "sandboxes.compare.local",
+    "ca_file": "/home/hong/data/comparison/cube-xfs/kuasar/runs/72667ef527/demo-ca.crt",
+    "proxy_address": "127.0.0.2",
+    "api_url": "https://api.sandboxes.compare.local",
+    "resource_cgroup_patterns": [
+      "kuasar-comparison",
+      "bench-kuasar-off-",
+      "kuasar-demo-"
+    ],
+    "resource_cgroup_exclude": [
+      "uffd113abc"
+    ]
+  },
+  "kuasar-uffd": {
+    "kind": "e2b",
+    "netns": "bench113-u",
+    "key_file": "/home/hong/src/research/sixway-aligned-20261117/private/kuasar-uffd",
+    "template": "e2b-snp-bWFuaWZlc3Q6Ly8wZmRhOGExNWM0YTEzMjBkOWU2ODczZjMxYWRjMmYwOWVhNDI5Y2JmYWVmZDc3NDVhMjEyODE5YWM5NDdjM2Vm",
+    "create_kwargs": {
+      "metadata": {
+        "kuasar-sandbox.restore": "{\"prefetch\":\"off\"}",
+        "kuasar-sandbox.resource": "{\"capacity\": {\"cpu\": 2, \"memory\": \"2048MiB\"}, \"allocatable\": {\"cpu\": 2, \"memory\": \"2048MiB\"}}"
+      }
+    },
+    "domain": "sandboxes.uffd113.local",
+    "ca_file": "/home/hong/data/uffd/runs/uffd113abc/demo-ca.crt",
+    "proxy_address": "127.0.0.2",
+    "api_url": "https://api.sandboxes.uffd113.local",
+    "resource_cgroup_patterns": [
+      "bench-private-uffd",
+      "kuasar-demo-uffd113abc"
+    ]
+  },
+  "cube": {
+    "kind": "e2b",
+    "netns": "bench113",
+    "key_file": "/home/hong/src/research/sixway-formal-python-113/private/cube",
+    "template": "tpl-e94033e580b4409a855e878a",
+    "create_kwargs": {},
+    "domain": "cube.app:18443",
+    "ca_file": "/root/.local/share/mkcert/rootCA.pem",
+    "proxy_address": "127.0.0.1",
+    "api_url": "http://127.0.0.1:3000",
+    "resource_cgroup_patterns": [
+      "cube-sandbox-",
+      "/cube_sandbox/"
+    ]
+  },
+  "agentenv": {
+    "kind": "e2b",
+    "netns": "bench113",
+    "key_file": "/home/hong/src/research/sixway-formal-python-113/private/agentenv",
+    "template": "languages-python-2cpu-1794952712939038667",
+    "create_kwargs": {},
+    "api_url": "http://127.0.0.1:18000",
+    "sandbox_url": "http://127.0.0.1:18000",
+    "resource_cgroup_patterns": [
+      "agentenv-comparison"
+    ]
+  },
+  "kuasar-mlink": {
+    "kind": "mlink",
+    "netns": "bench113-m-generic",
+    "template": "snap_3r4f12phkkvgrn90anwmn5jcr3",
+    "ctl": [
+      "/home/hong/src/private/kuasar-mlink/test_deps/bin/ttctl",
+      "--server",
+      "http://127.0.0.1:29080",
+      "--data-server",
+      "http://127.0.0.1:29081",
+      "--admin-server",
+      "http://127.0.0.1:29082",
+      "--config",
+      "/home/hong/data/mlink-generic/client.json",
+      "--request-timeout",
+      "60"
+    ],
+    "pool_kind": "mlink",
+    "resource_cgroup_patterns": [
+      "bench-mlink-generic"
+    ],
+    "pool_total_capacity": 320
+  },
+  "kuasar-fork": {
+    "kind": "e2b",
+    "netns": "py113-fork",
+    "key_file": "/home/hong/src/research/python-latest-113/deploy/fork/api-key",
+    "api_url": "http://127.0.0.1:18887",
+    "sandbox_url": "http://127.0.0.1:18887",
+    "template": "base",
+    "pool_kind": "fork",
+    "resource_cgroup_patterns": [
+      "bench-python113-fork"
+    ]
+  },
+  "_profile": {
+    "vcpus": 2,
+    "memory_mib": 2048,
+    "startup_pool_capacity": 64,
+    "warmup_samples": 1,
+    "startup_samples": 50,
+    "concurrency": 1,
+    "cache_policy": "Target-file cache conditioning only for strict native warm/cold; no global cache reset; no language-specific prewarming",
+    "readiness": "client receipt of native shell marker, followed by random print from a newly started selected-language interpreter in the same exec stream",
+    "pool_unsupported": [
+      "kuasar-off",
+      "kuasar-uffd",
+      "cube",
+      "agentenv"
+    ]
+  },
+  "_languages": {
+    "python": {
+      "image": "python:3.12-slim",
+      "digest": "sha256:2fe5997d249a808b8eeea52c58a1dbffbba28754dc11699ef5c029f2d818ce79",
+      "templates": {
+        "kuasar-off": "e2b-snp-bWFuaWZlc3Q6Ly8wNTBjMjA2ZGJiYmRiZmFkNGI1YWYwZWY0NjdmNGM1MWRiYWZlM2QzYWJlYjIyYTgyMmFkZTIwNzk1NDA0ZDMx",
+        "kuasar-uffd": "e2b-snp-bWFuaWZlc3Q6Ly8wZmRhOGExNWM0YTEzMjBkOWU2ODczZjMxYWRjMmYwOWVhNDI5Y2JmYWVmZDc3NDVhMjEyODE5YWM5NDdjM2Vm",
+        "agentenv": "languages-python-2cpu-1794952712939038667",
+        "cube": "tpl-e94033e580b4409a855e878a",
+        "kuasar-mlink": "snap_3r4f12phkkvgrn90anwmn5jcr3",
+        "kuasar-fork": "base"
+      }
+    },
+    "node": {
+      "image": "node:22-bookworm-slim",
+      "digest": "sha256:47725aca53d3295ec2d3be8f62726599b3033cc262edc2c7e429909b3ac599fc",
+      "templates": {
+        "kuasar-off": "e2b-snp-bWFuaWZlc3Q6Ly8wODY2MGZmMjE2OWZlNzAwZDFjMThhMzRiNmEwYTA5YTNlY2IxYjhlYjU5YTQ5YjgwOThhY2U2MmFjOGRiZGRm",
+        "kuasar-uffd": "e2b-snp-bWFuaWZlc3Q6Ly80ZThiMzBhYWQzZmVmM2Y0ODFkZDY5MzEwODI5YTQzNWYyMWMzOGQ3MGNkYzYyZDQzYWQyZjNhNDMzMzhiZjQ0",
+        "agentenv": "languages-node-2cpu-1794952715004808210",
+        "cube": "tpl-d915b9dcd0eb4e2da36d9523",
+        "kuasar-mlink": "snap_6hdasbvfwn84df7cqq25v1dn5x",
+        "kuasar-fork": "node"
+      }
+    },
+    "ruby": {
+      "image": "ruby:3.3-slim-bookworm",
+      "digest": "sha256:51d211cdbd0b226c7bbae9a377ed5731eaf2acb728000096061c01d360ed213d",
+      "templates": {
+        "kuasar-off": "e2b-snp-bWFuaWZlc3Q6Ly9hYTQwYzUwYWI4NjdiNjlhMTMyZjA5ODBmMDU0MzhkOGE4NDg0ZmU5MjJlM2I5NzIwMmY3MDJlNzY2ZGZkMTQz",
+        "kuasar-uffd": "e2b-snp-bWFuaWZlc3Q6Ly80NDc2ODZkZmMyYTE5ZDg0MDg4MGFkOGM2Mjc1MzA1ZGY0OWU0Y2Q1MDJhODhjNzA3ZWFiMWQ3MmU0NGRiZTZi",
+        "agentenv": "languages-ruby-2cpu-1794952724073796796",
+        "cube": "tpl-9f9859d910464eabb69c5758",
+        "kuasar-mlink": "snap_72nrqk0d9t7n71mrjzhh9snvvy",
+        "kuasar-fork": "ruby"
+      }
+    }
+  },
+  "_image": "python:3.12-slim",
+  "_language": "python"
+}

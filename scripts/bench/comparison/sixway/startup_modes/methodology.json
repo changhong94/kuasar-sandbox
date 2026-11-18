@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "samples_per_group": 10,
+  "modes": {
+    "local_warm": "Existing local native snapshot; target data cache warm.",
+    "local_cold": "Same local native snapshot; target data cache cold before each measured request.",
+    "remote": "Manifest/chunk restore; prefer memory-served chunks and verify actual serving tier.",
+    "live_parent_fork": "Fork a running sandbox with active application state; never substitute a prepared template or pooled child."
+  },
+  "pool_state": "Record separately; pool starvation is not a cache-cold condition.",
+  "metrics": {
+    "api_ms": "Client request start to fork/create response.",
+    "ready_ms": "Client request start to receipt of the common shell/native readiness marker.",
+    "print_ms": "Client request start to receipt of the random interpreter print marker, including interpreter startup.",
+    "parent_pause_ms": "Parent pause request to parent vCPU resume completion, from actual host events; report vCPU quiesce separately when available.",
+    "parent_progress_gap_ms": "Independent guest workload progress gap including probe resolution; not a substitute for measured VMM pause.",
+    "child_resume_ms": "Client request start to child vCPU resume completion."
+  },
+  "timeline": {
+    "origin": "Client monotonic request start = 0; client and host clock mapping must be verified.",
+    "lanes": [
+      "client/control-plane",
+      "parent VM",
+      "child KVM/devices",
+      "guest agent/identity",
+      "persistence",
+      "network",
+      "child command"
+    ],
+    "rules": [
+      "Use events from one real sample; do not concatenate medians.",
+      "Show a representative sample nearest the end-to-end median and a separate maximum sample.",
+      "Preserve overlapping intervals in different lanes.",
+      "Unaligned clock domains or missing intervals are explicitly unknown, never invented.",
+      "Show asynchronous work after print when captured; preparation before t=0 is separately costed."
+    ]
+  },
+  "validation": [
+    "Parent workload and inherited child process continue independently.",
+    "Inherited memory/file markers agree at fork; subsequent writes remain independent.",
+    "Destroy parent first and child first in separate fixtures; survivor remains usable.",
+    "No language-specific interpreter prestart.",
+    "No global cache drop and no changes to other users' processes."
+  ],
+  "reporting": [
+    "Keep native snapshot cold/warm separate from Manifest/chunk mode.",
+    "Report unsupported modes as unsupported, not zero.",
+    "Report memory-tier hit evidence and preparation/warmup/refill costs.",
+    "Live fork is a separate table from template-pool creation."
+  ]
+}

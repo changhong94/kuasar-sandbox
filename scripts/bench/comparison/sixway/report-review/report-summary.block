@@ -1,0 +1,40 @@
+def pct(a,b):
+ return '—' if a is None or b is None or a<0 or b<=0 else f'{(a/b-1)*100:+.1f}%'
+def summary_page():
+ page('结果摘要：fork 与 mlink','Results summary: fork versus mlink')
+ text('统一镜像与客户端计时；串行指标为中位数，64 槽准备和 256 并发为各自单批次总耗时。百分比 = (fork / mlink − 1) × 100%；耗时和占用负值更好，吞吐正值更好。','Matching images and client boundaries. Serial metrics are medians; 64-slot preparation and 256-request completion each show one batch total. Difference = (fork / mlink − 1) × 100%. Negative is better for latency/footprint; positive is better for throughput.','small')
+ rr=[[tr('项目','Measure'),'fork','mlink',tr('相对差异','Difference')]]
+ def add(label,a,b,unit='ms'):rr.append([label+' / '+unit,f(a),f(b),pct(a,b)])
+ for l in ('python','node'):
+  for k in (('ready_ms','print_ms') if l=='python' else ('print_ms',)):
+   add(langs[l]+' '+('Ready' if k=='ready_ms' else 'print'),st.median(x[k] for x in group('kuasar-fork',l,reference('kuasar-fork'))),st.median(x[k] for x in group('kuasar-mlink',l,reference('kuasar-mlink'))))
+ a=resource['products']['kuasar-fork'];b=resource['products']['kuasar-mlink']
+ add(tr('50 沙箱平均新增 PSS','Added PSS per instance at 50'),a['memory']['increment_per_instance'],b['memory']['increment_per_instance'],'MiB')
+ add(tr('64 槽准备','Prepare 64 slots'),pool['fork']['preparation']['first_slot_start_to_64_ready_ms'],pool['mlink']['preparation']['first_slot_start_to_64_ready_ms'])
+ aa=bursts['kuasar-fork']['print']['all_256_ms'];bb=bursts['kuasar-mlink']['print']['all_256_ms']
+ add(tr('256 并发全部 print','All 256 concurrent prints'),aa/1000 if aa is not None else None,bb/1000 if bb is not None else None,'s')
+ table(rr,[258,78,78,96])
+ if any(row[-1]=='—' for row in rr[1:]):text('比例栏 — 表示没有完整可比值、基线非正或净增量为负；不把后台回收解释为节省百分比。','A dash in the ratio column means no complete comparison, a nonpositive baseline or a negative net increment; background reclamation is not presented as a savings percentage.',style='small')
+ successes=', '.join(names[p]+' '+str(bursts[p]['print']['completed'])+'/256' for p in order)
+ text(tr('256 同发完成率：','Simultaneous completion counts: ')+successes,style='small')
+ agent=bursts['agentenv']['print']['all_256_ms']
+ text(tr('AgentENV 的 256 请求总完成时间：','AgentENV all-256 completion time: ')+(f(agent/1000)+' s' if agent is not None else tr('未全部完成','incomplete'))+tr('。未全部成功的产品不参与“全部完成”速度排名；失败原因在并发章节说明。',' . Incomplete batches are excluded from all-complete speed rankings; failures are explained in the concurrency section.'),style='small')
+ complete=[(r['print']['all_256_ms'],p) for p,r in bursts.items() if r['print']['all_256_ms'] is not None];best,p=min(complete)
+ text(tr('本批次六方 256 同发全部完成最快的是 ','Fastest complete 256-request batch in this study: ')+names[p]+', '+f(best/1000)+tr(' s。',' s.'),style='small')
+ better=[];worse=[]
+ for row in rr[1:]:
+  if row[-1]=='—':continue
+  delta=float(row[-1].rstrip('%'));higher_good='task/s' in row[0]
+  if delta==0:continue
+  good=delta>0 if higher_good else delta<0
+  (better if good else worse).append(row[0].split(' / ')[0]+' '+row[-1])
+ text(tr('优势项：','Advantages: ')+('; '.join(better) or '—'),style='small')
+ text(tr('不足项：','Disadvantages: ')+('; '.join(worse) or '—'),style='small')
+
+def phase_table(row):
+ lane_en={'客户端':'Client','父 VM 暂停窗口':'Parent pause','父 VM':'Parent VM','子 VM':'Child VM','父 API':'Parent API','子 API':'Child API','控制面':'Control','服务端持久化':'Durable state','异步网络':'Async network'}
+ phase_en={'HTTP fork':'HTTP fork','SDK connect':'SDK connect','exec → Ready':'exec to Ready','解释器启动 → print':'Interpreter to print','暂停请求 → 恢复完成':'Pause request to resume','暂停/状态捕获':'Pause/capture state','线程退出/对象释放':'Host-thread quiescence','宿主 fork':'Host fork','复用 KVM / 恢复设备':'Reuse KVM/restore devices','屏障/等待/恢复运行':'Barrier/wait/resume','子进程 / KVM 初始化':'Child/KVM initialization','内存注册/vCPU/设备恢复':'Register RAM/restore vCPU/devices','线程就绪':'Threads ready','API 启动至绑定':'API start to bind','请求分发/暂停前准备':'Dispatch/pre-pause preparation','恢复后控制处理*':'Post-restore host handling','网络命名空间':'Network namespace','状态提交':'Commit state','网络完成 RPC':'Network-complete RPC'}
+ rows=[[tr('泳道 / 阶段','Lane / phase'),tr('开始 ms','Start ms'),tr('结束 ms','End ms'),tr('实际耗时 ms','Elapsed ms')]]
+ for x in row['spans']:
+  rows.append([(lane_en[x['lane']]+' / '+phase_en[x['label']]) if english else x['lane']+' / '+x['label'],f(x['start_ms']),f(x['end_ms']),f(x['duration_ms'])])
+ table(rows,[285,75,75,75])

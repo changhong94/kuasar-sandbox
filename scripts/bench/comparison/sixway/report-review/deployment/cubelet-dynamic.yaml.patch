@@ -1,0 +1,11 @@
+--- cubelet-dynamic.yaml.before
++++ cubelet-dynamic.yaml.after
+@@ -27,4 +27,4 @@
+-    mcpu_limit: 0
+-    mem_limit: ""
+-    mvm_limit: 0
+-    creation_concurrent_num: 0
++    mcpu_limit: 640000
++    mem_limit: "640Gi"
++    mvm_limit: 320
++    creation_concurrent_num: 256

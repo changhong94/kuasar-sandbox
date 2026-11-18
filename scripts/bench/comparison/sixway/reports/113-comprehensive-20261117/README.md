@@ -1,3 +1,6 @@
+> PDF artifacts are no longer tracked. The preserved PDF is outside Git at
+> `/home/hong/src/research/report-review-113/report/excluded-from-git/113-comprehensive-20261117/`.
+
 # 113 六方综合基准报告（中文）
 
 本目录发布最终 13 页报告与生成脚本。全文无历史附录；先定义 ready / print，

@@ -1,0 +1,7 @@
+--- mlink-start.sh.before
++++ mlink-start.sh.after
+@@ -20 +20,3 @@
+-load_test_resources 1; write_node_configs 64 1000 2 2 64
++load_test_resources 1; write_node_configs 64 1000 8 8 320
++# Separate total runtime capacity, initial ready reserve and admission queue.
++sed -i -E 's/^max_waiters = .*/max_waiters = 256/; s/^private_storage_capacity = .*/private_storage_capacity = 320/' "$work/ttlet.toml"

@@ -1,0 +1,5 @@
+--- uffd-serve.sh.before
++++ uffd-serve.sh.after
+@@ -513 +513 @@
+-if "$BIN/connector-ctl" vswitch start "$SWITCH" --netns="$SW_NETNS" --ports=64 --mac-addr=02:00:00:00:00:01 \
++if "$BIN/connector-ctl" vswitch start "$SWITCH" --netns="$SW_NETNS" --ports=512 --mac-addr=02:00:00:00:00:01 \
