@@ -26,6 +26,12 @@ disk=load(B/'disk-backing-verification.json');assert len(disk['rows'])==2 and al
 nested_runtime=load(B/'nested-runtime-provenance.json');assert nested_runtime['sha256']==nested_runtime['copied_sha256']
 recovery=load(B/'nested-recovery.json');assert recovery['all_passed']
 assert all(r['post_restore_independent_writes'] and all(x['sqlite_after_restore'][0]=='ok' for x in r['sandboxes']) for r in recovery['runs'])
+snapshot_batch_path=B/'snapshot-batch.json'
+snapshot_batch=load(snapshot_batch_path) if snapshot_batch_path.exists() else {'directory':'results/snapshots','samples_per_group':50}
+SNAP=B/snapshot_batch['directory'];SNAP_N=snapshot_batch['samples_per_group']
+if snapshot_batch_path.exists():
+ assert load(SNAP/'complete.json')['complete']
+ assert load(B/'persistence-validation.json')['all_passed']
 order=['kuasar-fork','kuasar-mlink','agentenv','cube','kuasar-off','kuasar-uffd']
 names=dict(zip(order,['fork','mlink','AgentENV','CubeSandbox','Kuasar off','Kuasar UFFD']))
 langs={'python':'Python','node':'Node.js','ruby':'Ruby'}
@@ -87,12 +93,14 @@ def pct(a,b):
  return '—' if a is None or b is None or a<0 or b<=0 else f'{(a/b-1)*100:+.1f}%'
 def summary_page():
  page('结果摘要：fork 与 mlink','Results summary: fork versus mlink')
- text('统一镜像与客户端计时；串行指标为中位数，64 槽准备和 256 并发为各自单批次总耗时。百分比 = (fork / mlink - 1) × 100%；耗时和占用负值更好，吞吐正值更好。','Matching images and client boundaries. Serial metrics are medians; 64-slot preparation and 256-request completion each show one batch total. Difference = (fork / mlink - 1) × 100%. Negative is better for latency/footprint; positive is better for throughput.','small')
+ text(f'统一镜像与客户端计时；暂停保存及恢复各组 {SNAP_N} 次，其余串行指标按正文注明的样本量，均列中位数；64 槽准备和 256 并发为各自单批次总耗时。百分比 = (fork / mlink - 1) × 100%；耗时和占用负值更好，吞吐正值更好。',f'Matching images and client boundaries. Save/restore uses {SNAP_N} samples per product; other serial counts are specified in the body. Serial metrics are medians; 64-slot preparation and 256-request completion each show one batch total. Difference = (fork / mlink - 1) × 100%. Negative is better for latency/footprint; positive is better for throughput.','small')
  rr=[[tr('项目','Measure'),'fork','mlink',tr('相对差异','Difference')]]
  def add(label,a,b,unit='ms'):rr.append([label+' / '+unit,f(a),f(b),pct(a,b)])
  for l in ('python','node'):
   for k in (('ready_ms','print_ms') if l=='python' else ('print_ms',)):
    add(langs[l]+' '+('Ready' if k=='ready_ms' else 'print'),st.median(x[k] for x in group('kuasar-fork',l,reference('kuasar-fork'))),st.median(x[k] for x in group('kuasar-mlink',l,reference('kuasar-mlink'))))
+ for k,label in [('snapshot_ms',tr('暂停保存','Pause and save')),('print_ms',tr('恢复到 Python print','Restore to Python print'))]:
+  add(label,st.median(load(SNAP/f'kuasar-fork/{i:02d}.json')[k] for i in range(1,SNAP_N+1)),st.median(load(SNAP/f'kuasar-mlink/{i:02d}.json')[k] for i in range(1,SNAP_N+1)))
  a=resource['products']['kuasar-fork'];b=resource['products']['kuasar-mlink']
  add(tr('50 沙箱平均新增 PSS','Added PSS per instance at 50'),a['memory']['increment_per_instance'],b['memory']['increment_per_instance'],'MiB')
  add(tr('64 槽准备','Prepare 64 slots'),pool['fork']['preparation']['first_slot_start_to_64_ready_ms'],pool['mlink']['preparation']['first_slot_start_to_64_ready_ms'])
@@ -165,7 +173,7 @@ for english in (False,True):
     a=group(p,l,m);rr.append([names[p]+' / '+labels[m],f(st.median(x['ready_ms'] for x in a))]+[f(v) for v in stats([x['print_ms'] for x in a])])
   table(rr,[140,74,74,74,74,74])
   text(tr('按 print 中位数，fork 相对 UFFD：','fork relative to UFFD, median print: ')+', '.join(labels[m]+' '+f((st.median(x['print_ms'] for x in group('kuasar-fork',l,m))/st.median(x['print_ms'] for x in group('kuasar-uffd',l,m))-1)*100)+'%' for m in modes)+tr('（负数表示更短）。',' (negative means shorter).'),style='small')
-  text('fork 的 remote 当前先完整重建稀疏原生载体，再走绑定/恢复；全部取 chunk、解密、落盘和同步都在创建计时内。off/UFFD 使用各自的恢复机制。不能把二者解释为相同按需缺页算法的比较。','fork remote currently reconstructs complete sparse native carriers before binding/restoring. Chunk fetch, decryption, file materialization and synchronization are all inside creation timing. off/UFFD use their own restoration mechanisms; this is not a comparison of identical demand-paging algorithms.','small')
+  text('该项启动测量使用的 fork remote 路径先完整重建稀疏原生载体，再走绑定/恢复；全部取 chunk、解密、落盘和同步都在创建计时内。off/UFFD 使用各自的恢复机制。不能把二者解释为相同按需缺页算法的比较。','The fork remote path used for these startup measurements reconstructs complete sparse native carriers before binding/restoring. Chunk fetch, decryption, file materialization and synchronization are all inside creation timing. off/UFFD use their own restoration mechanisms; this is not a comparison of identical demand-paging algorithms.','small')
  page('256 请求：容量与计时口径','256 requests: capacity and timing boundaries')
  text('每方分别测同时发送，以及每隔 10、25、50、100 ms 发送一次，共五批、每批 256 请求。每批另有 1 次排除的 warmup，所有成功实例保留至全部请求结束，核对存活后统一销毁。每个间隔只有一批实测，不把 256 个请求当作 256 轮独立突发。','Each product runs five batches: simultaneous dispatch and one request every 10, 25, 50 or 100 ms, 256 requests each. Each batch has one excluded warmup. All successful instances remain until every request settles, then undergo liveness checks and unified cleanup. Each interval has one observed batch, not 256 independent bursts.')
  text('64 槽是每批请求前实际核对的就绪量及配置基础目标，不是运行后空闲槽的硬上限。mlink 保留原生自适应策略，可临时扩大空闲池；每批开始前重新回到 64 个就绪槽。','The 64-slot baseline is verified before each batch and is the configured base target, not a hard cap on idle slots after requests begin. mlink retains native adaptive growth; each batch starts again from exactly 64 ready slots.',style='small')
@@ -246,7 +254,7 @@ for english in (False,True):
  for p in order:
   r=resource['products'][p];rr.append([names[p]]+[f(r[k]) for k in ('short_ms','cpu_ms','io_ms','throughput')])
  table(rr,[95,90,90,125,110])
- text('全为本次最新代码、Python 镜像和持久化磁盘重跑。5 轮串行资源测试；短命令每轮 8 次 true，先求轮内中位数再取 5 轮中位数。它测 RPC、命令/进程启动与返回，不是纯 Python 启动。','Fresh runs use this revision, the Python image and persistent disks. Five serial resource rounds; each has eight true commands, summarized by the median of per-round medians. This measures RPC, command/process launch and return, not Python startup alone.')
+ text('资源测试使用 Python 镜像和持久化磁盘。5 轮串行资源测试；短命令每轮 8 次 true，先求轮内中位数再取 5 轮中位数。它测 RPC、命令/进程启动与返回，不是纯 Python 启动。','Resource tests use the Python image and persistent disks. Five serial resource rounds; each has eight true commands, summarized by the median of per-round medians. This measures RPC, command/process launch and return, not Python startup alone.')
  text('CPU：在 guest 内对 256 MiB 数据计算 SHA-256 的实际耗时，输入缓冲准备不计入；不是 CPU 使用率。IO：生成、哈希、写入 32 MiB 并 flush/fsync 的整体任务耗时，不是纯磁盘带宽。','CPU: guest elapsed time hashing 256 MiB with SHA-256, excluding input-buffer setup; not CPU utilization. IO: generating, hashing, writing and flush/fsync of 32 MiB as one task, not pure disk throughput.')
  text('这个指标表示：同时最多处理 2 个完整任务时，每秒能完成多少个任务。数值越高越好。','This measures how many complete tasks finish per second when at most two are processed at the same time. Higher is better.')
  text('一个任务包括：创建沙箱 → 启动 Python 并 print → 执行哈希计算 → 销毁沙箱。每轮共做 8 个任务，一个结束后再补下一个，直到全部完成。','One task consists of creating a sandbox, starting Python and printing, computing a hash, and deleting the sandbox. Each round has eight tasks. Whenever one finishes, the next begins, until all eight finish.')
@@ -278,18 +286,21 @@ for english in (False,True):
  text('每沙箱一个 Python 进程持有 20 MiB 数组，重叠持有期采样；基线是已经运行的 50 个 Python 进程。默认零数组可能利用共享零页、尚未逐页实际写入，不能与显式填充/随机写入视作同样物理提交量。','Each sandbox holds a 20 MiB array in a Python process; samples are taken during overlapping retention. Baseline is 50 already-running Python processes. Default zero arrays may use shared zero pages without explicit writes and are not equivalent to physically touching every page.')
  text('fork 的实际 guest 挂载信息已核对：可写目录位于 ext4 块设备，宿主使用可写 QCOW2；父子使用不同的可写磁盘，双向写入和两种销毁顺序均验证通过。','Actual guest mount information confirms that fork writes to an ext4 block device backed by writable host QCOW2. Parent and child have separate writable disks; independent writes and both destruction orders pass.')
  page('持久化快照：保存、恢复与磁盘增量','Persistent snapshots: save, restore and disk increment')
- rr=[head(tr('对象','Product'))];snap={}
+ rr=[[tr('对象','Product'),tr('指标 / ms','Metric / ms'),tr('中位数','Median'),tr('最大值','Maximum')]];snap={}
  for p in order:
-  a=[load(R/f'snapshots/{p}/{i:02d}.json') for i in range(1,51)];assert all(x['success'] and x['destroyed'] and x['process_state_verified'] and x['file_state_verified'] for x in a);snap[p]=a
-  rr+=metric_rows(names[p],a,('snapshot_ms','ready_ms','print_ms'))
- table(rr,[95,80,83,83,83,86])
+  a=[load(SNAP/f'{p}/{i:02d}.json') for i in range(1,SNAP_N+1)];assert all(x['success'] and x['destroyed'] and x['process_state_verified'] and x['file_state_verified'] for x in a);snap[p]=a
+  rr += [[names[p], label, f(st.median(x[k] for x in a)), f(max(x[k] for x in a))] for k,label in [('snapshot_ms',tr('暂停保存','Pause and save')),('ready_ms',tr('恢复到 Ready','Restore to Ready')),('print_ms',tr('恢复到 Python print','Restore to Python print'))]]
+ table(rr,[105,185,110,110])
  for k,label in [('snapshot_ms',tr('持久化保存','Persistent save')),('ready_ms',tr('恢复到 Ready','Restore to Ready')),('print_ms',tr('恢复到 print','Restore to print'))]:
   text(label+': '+relative(st.median(x[k] for x in snap['kuasar-fork']),st.median(x[k] for x in snap['kuasar-mlink'])),style='small')
- text('每组 1 次 warmup + 50 次。保存前：运行中进程持有 32 MiB 随机内存、递增计数器和稳定 PID，并有 fsync 完成的 32 MiB 文件。保存计时为客户端发出持久化 pause 到 API 确认；源实例保持暂停。恢复计时为发出 resume/connect 到 shell Ready / 新启动 Python 的 print。','One warmup and 50 samples per product. Before saving, a process holds 32 MiB of random memory, an increasing counter and stable PID, alongside a fsynced 32 MiB file. Save timing is persistent-pause request through API acknowledgment; the source remains paused. Restore timing is resume/connect request through shell Ready or newly started Python print.','small')
+ text(tr('恢复到 Python print 最大值：','Maximum restore-to-Python-print latency: ')+relative(max(x['print_ms'] for x in snap['kuasar-fork']),max(x['print_ms'] for x in snap['kuasar-mlink'])),style='small')
+ text(f'每组 1 次 warmup + {SNAP_N} 次串行测量。保存前：运行中进程持有 32 MiB 随机内存、递增计数器和稳定 PID，并有 fsync 完成的 32 MiB 文件。保存计时为客户端发出持久化 pause 到 API 确认；源实例保持暂停。恢复计时为发出 resume/connect 到 shell Ready / 新启动 Python 的 print。',f'One warmup and {SNAP_N} serial samples per product. Before saving, a process holds 32 MiB of random memory, an increasing counter and stable PID, alongside a fsynced 32 MiB file. Save timing is persistent-pause request through API acknowledgment; the source remains paused. Restore timing is resume/connect request through shell Ready or newly started Python print.','small')
+ text('本项使用固定 digest 的 Python 3.12-slim，2 vCPU、2 GiB。Ready 是客户端收到 shell 原生标识；print 是收到随后新启动 Python 打印的随机标识，包含解释器启动，二者都从恢复请求开始计时。fork 固定使用 local 持久化配置；其余采用各产品的持久化暂停/恢复路径。','This test uses pinned-digest Python 3.12-slim, two vCPUs and 2 GiB. Ready is client receipt of the native shell marker; print is receipt of the subsequent random marker from a newly launched Python, including interpreter startup. Both start at the restore request. fork uses fixed local persistence; other products use their persistent pause/resume paths.','small')
  page('持久化结果的范围与验证','Persistence scope and verification')
  table([[tr('对象','Product'),tr('保存导致的磁盘增量中位 MiB','Median save-induced disk increment / MiB'),tr('最大 MiB','Maximum / MiB')]]+[[names[p],f(st.median(x['snapshot_disk_increment_bytes'] for x in snap[p])/2**20),f(max(x['snapshot_disk_increment_bytes'] for x in snap[p])/2**20)] for p in order],[130,250,130])
  text('磁盘基线是文件已写入、进程已运行但尚未请求保存时；结束点为保存确认后的产品目录 extent 观测。统计产品存储后端净增量，含元数据/并发回收影响，不把它冒充独立快照文件长度。','Disk baseline is after the file/process setup but before save. The endpoint is product-directory extent observation after save acknowledgment. This is net backend allocation including metadata/GC effects, not the length of an isolated snapshot file.')
  text('保存后为了观测磁盘会额外保持暂停，再显式恢复；这段人为观测等待不算保存或恢复耗时。恢复保留保存后的自然缓存，不代表断电后的冷启动。验证恢复后 PID 和内存摘要不变、计数器继续增长、文件摘要一致，并独立销毁。','Storage observation deliberately extends the paused interval before explicit resume; this wait is excluded from save/restore latency. Restores retain natural post-save caches and are not cold power-loss restores. Checks verify unchanged PID/memory digest, advancing counter and matching file digest, followed by independent destruction.')
+ text('六方均验证两实例独立文件状态，分别按先建先删、后建先删两种顺序销毁，剩余实例继续执行并读取自己的文件。fork 另验证运行中父子派生、内存与磁盘 CoW 隔离，以及保存恢复后的独立运行。','All six products verify independent file state in two instances with both deletion orders; the survivor continues executing and reading its own file. fork additionally verifies live-parent derivation, RAM/disk CoW isolation and independent execution after save/restore.','small')
  text('API 返回不单独证明所有产品的掉电持久化承诺。fork 的 fsync/原子发布及安全屏障保留；宿主重启恢复采用隔离嵌套宿主验证，物理 113 不重启。','API acknowledgment alone does not prove every product’s power-loss guarantee. fork retains fsync/atomic publication and safety barriers; host-restart recovery is validated in an isolated nested host, without rebooting physical host 113.')
  text('隔离宿主重启与 SQLite WAL 验证','Isolated host reboot and SQLite WAL validation','heading')
  text('独立功能验证批次的两轮真实嵌套 Linux 宿主重置，分别验证父先/子先销毁。运行中的 SQLite 连接使用 WAL + synchronous=FULL；事务计数与内存计数一致。恢复后保持进程 PID、内存秘密和递增状态，SQLite integrity_check 为 ok，父子文件写入独立；第二轮另验证恢复后再次 fork。','Two real nested-Linux host resets in the separately recorded functional-validation batch verify parent-first and child-first deletion. A live SQLite connection uses WAL + synchronous=FULL; transaction and in-memory counters agree. Restores preserve PID, an in-memory secret and progress, pass SQLite integrity_check, and retain independent parent/child writes. The second round also forks again after recovery.')

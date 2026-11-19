@@ -52,3 +52,35 @@ PDFs, generated report manifests and rendered previews remain outside Git.
 The reviewed PDF on 113 is
 `/home/hong/src/research/report-review-113/report/sandbox-sixway-zh-en-reviewed.pdf`.
 Chinese and English sections use the same measurements.
+
+
+## Reviewed offline report (latest fork + retained five-product baseline)
+
+`offline_report.py` is the entry point for the reviewed bilingual report. It only
+reads retained evidence and renders charts/PDF; it does not start services, VMs,
+or benchmarks. `report.py` remains the earlier full-cohort generator.
+
+```sh
+python offline_report.py /home/hong/src/research/sixway-full-20261119
+```
+
+The evidence directory must retain its staged `report.py` rendering definitions,
+`attempts/`, `provenance/`, `deployment/`, `retirement/`, `cleanup-audit.json`,
+`offline-evidence/`, `storage-supplement/` and `local108-snapshots/`. Its sibling
+`report-review-113` supplies the audited five-product baseline and pool PSS;
+`storage-incremental-113` supplies explicitly labelled local persistence and disk
+reference batches. The generator also records the checkpoint-mode source used
+for the preserved deployment. These host-specific inputs are evidence, not a
+portable installer. Missing evidence fails rather than starting a new test.
+
+Outputs stay under `<evidence>/offline-report/`: the Chinese-first/English-second
+PDF, `sources.json` with input hashes, `methods.json` and `refill-audit.json`.
+Generated outputs and raw measurements must not be committed.
+
+The reviewed summary omits unmatched remote rows and the host-108 combined
+save/restore row, while the body retains separate local/remote and host-labelled
+results. Memory/disk labels explain baselines and sampling; reserve metrics are
+recomputed from retained startup events. Refill charts deduplicate executions,
+exclude preparation before the request window, separate mlink Floor/Elastic,
+and split completions before/after cleanup. Charts describe completion windows,
+not causation by cleanup. Cross-host comparisons are explicitly labelled.

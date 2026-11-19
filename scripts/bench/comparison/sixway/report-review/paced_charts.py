@@ -41,26 +41,41 @@ def startup_charts(base,english=False,interval=0):
 def refill_data(base,interval=0):
  result={}
  for p in ('kuasar-fork','kuasar-mlink'):
-  r=read(base,interval)[p];events=[]
+  r=read(base,interval)[p];events=[];seen=set();excluded=collections.Counter()
   for line in (base/f'results/paced/{interval}/{p}/pool-events.jsonl').read_text().splitlines():
    try:e=json.loads(line)
-   except ValueError:continue
+   except ValueError:excluded['invalid_json']+=1;continue
    if p=='kuasar-fork':
     if e.get('event')!='prepared' or e.get('reason')!='refill':continue
-    end=e['monotonic_ns'];duration=e['elapsed_ms'];cleanup=end>=r['cleanup_started_ns'];sort=end
+    end=e['monotonic_ns'];duration=e['elapsed_ms'];begin=end-duration*1e6
+    lower=r['start_ns'];upper=r['end_ns'];cleanup=r['cleanup_started_ns'];kind='refill'
+    key=(e['epoch'],e['sid'],end)
    else:
     fields=e.get('fields',{})
     if fields.get('event')!='runtime_slot_prepare_execution' or not fields.get('success'):continue
-    end=int(datetime.datetime.fromisoformat(e['timestamp'].replace('Z','+00:00')).timestamp()*1e9);duration=fields['total_us']/1000;cleanup=end>=r['cleanup_started_unix_ns'];sort=fields['finished_mono_us']
-   events.append({'sort':sort,'duration_ms':duration,'phase':'after_cleanup' if cleanup else 'before_cleanup'})
+    klass=fields.get('class')
+    if klass not in ['ThinkWorkerFloor','ThinkWorkerElastic']:excluded['other_class']+=1;continue
+    end=int(datetime.datetime.fromisoformat(e['timestamp'].replace('Z','+00:00')).timestamp()*1e9)
+    duration=fields['total_us']/1000;begin=end-duration*1e6
+    lower=r['start_unix_ns'];upper=r['end_unix_ns'];cleanup=r['cleanup_started_unix_ns']
+    kind='floor' if klass=='ThinkWorkerFloor' else 'elastic'
+    key=(fields.get('run_id'),fields['slot'],fields['started_mono_us'],fields['finished_mono_us'])
+   if key in seen:excluded['duplicate']+=1;continue
+   seen.add(key)
+   if begin<lower:excluded['started_before_requests']+=1;continue
+   if end>upper:excluded['finished_after_observation']+=1;continue
+   events.append({'sort':end,'duration_ms':duration,'kind':kind,'phase':'after_cleanup' if end>=cleanup else 'before_cleanup','straddles_cleanup':begin<cleanup<=end})
   events.sort(key=lambda e:e['sort']);dur=[e['duration_ms'] for e in events]
-  result[p]={'events':events,'during_retained_request_window':sum(e['phase']=='before_cleanup' for e in events),'after_cleanup_started':sum(e['phase']=='after_cleanup' for e in events),'median_work_ms':statistics.median(dur) if dur else None,'max_work_ms':max(dur,default=None)}
+  result[p]={'events':events,'excluded':dict(excluded),'during_retained_request_window':sum(e['phase']=='before_cleanup' for e in events),'after_cleanup_started':sum(e['phase']=='after_cleanup' for e in events),'median_work_ms':statistics.median(dur) if dur else None,'max_work_ms':max(dur,default=None)}
  return result
 
-def refill_chart(base,english=False,interval=0):
- rows=refill_data(base,interval)
- series=[(NAMES[p],[(i,e['duration_ms']) for i,e in enumerate(rows[p]['events'],1)],color) for p,color in zip(('kuasar-fork','kuasar-mlink'),COLORS)]
- return chart(series,'Measured VM-slot refill work' if english else '每次 VM 补槽的实际准备耗时','Preparation work / ms' if english else '实际准备耗时 / ms',english,height=250,x_label='Refill completion rank' if english else '完成的第几个补槽',xmax=max(2,max(len(r['events']) for r in rows.values())))
+def refill_chart(base,english=False,interval=0,phase='before_cleanup'):
+ rows=refill_data(base,interval);series=[]
+ for p,kind,name,color in [('kuasar-fork','refill','fork refill','#236aa0'),('kuasar-mlink','floor','mlink floor','#d47921'),('kuasar-mlink','elastic','mlink elastic','#36804a')]:
+  chosen=[e for e in rows[p]['events'] if e['phase']==phase and e['kind']==kind]
+  series.append((name,[(i,e['duration_ms']) for i,e in enumerate(chosen,1)],color))
+ title=('Before cleanup: completed preparations' if english else '统一销毁前完成的槽位准备') if phase=='before_cleanup' else ('After cleanup starts: completed preparations' if english else '统一销毁开始后完成的槽位准备')
+ return chart(series,title,'Preparation / ms' if english else '准备耗时 / ms',english,height=210,x_label='Completion rank within each series' if english else '各类事件的完成序号',xmax=max(2,max(len(x[1]) for x in series)))
 
 def bars(rows,title,english=False,log=False,height=None):
  # rows: label, ready median, print median. Log scale starts at 1 ms.

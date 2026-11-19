@@ -3,14 +3,14 @@
   "analyze_pool.py": "ec2000ed08f8f3b3efbecaf4141d25ad7d1ea0c5bbfd53782bd4dbf0d4f0d5e5",
   "read_resource_suite.py": "0dbe745b89676d9f5380d0da501d57fca8235587d081cd759975bbb3e8655399",
   "cache_state.py": "61e4c7e6136e1e82a206871d8dad64f4b91b781b2a9cb422c74b3d89eca72430",
-  "report.py": "160950e8304d1ecffb0f18fbd17cbdff6bf42a00c1e6c88fb144cd97371c4095",
+  "report.py": "734ff8fa2b6f983b814c95dbe2ce7adb4c96e8dab8e7c26884f792c0fb6b7d4c",
   "archive_code.py": "bd76e89b2666e29caa9b0d8ed988825f980f3416a589deb83c3cf3a7aae71feb",
   "prepare_fork_templates.py": "03fd7ad8510a33628da6f3f698451da53881d5ff1e663a371231747fd32f2cad",
   "run_matrix.py": "f31ad3b8fb736701df2b9c08613d1273cf1eb9f88b63f2bec56560e7af01a3be",
   "analyze_failures.py": "f0dd2c0e07b809d4db99ee7df2813b968d86040e92140a2553c72df9fe399da5",
   "audit_pdf.py": "e35a6ff4e287e46408f2c71bd39d28017cd0168b1b638f442aabe5ffedd044dd",
   "stage_refresh.py": "fc7c2eed93d277c0b0c5c23618c193679b2fea0d12b9390c2f19ad8230458b7b",
-  "paced_charts.py": "573a660ece353e46783b1db09f044a4b3a7784f61548a01c4179fd2f0bb78c8e",
+  "paced_charts.py": "ef30e7dfcb5cf785d701ee66d12209709fe205cd8d2968e54db138a388677497",
   "report-summary.block": "f8f48ba7829a2af5f8c5d4f03823093b75bfec935ab19f459448f6827b59cee8",
   "recover_live_logs.py": "fe09f62e382c0a8d0cc0350f61d4e11edef3cbe7bca65c888af6e4b5c388b569",
   "requirements.txt": "e6303af4fbe4ffbb6f8cbe9a9c024c1a9e38e567feaccacb6e68d52a99ffaf5b",
@@ -21,7 +21,7 @@
   "live_fork.py": "896c32dc67a2c41f6c00d156cc91266abb3ed9ef2f3dd176d33c525c8b0462b7",
   "deploy_parallel_startup.py": "fa3850f3d7f5cc9a1c8cf4df94040f575b7aad05f75639db7aa5ecafdaf631dd",
   "rewrite_report.py": "90c0868a4b514401236b9bcac360d1dc248607874ad668b591b60bb430cd67fc",
-  "README.md": "2d03df55f13f97ad7c9b8f44d101789c896e1c5b725a5fb22e96033a2a0f6202",
+  "README.md": "a4ad50e9130ec43e89ba39ce4ba17ebfb6f2767830af2e1e9046aa9e6b0952bb",
   "analyze_live.py": "d2cccca6809c686593801695838a81af4ba37ebe8a95774ead7352e1ea81b3a0",
   "summarize_modes.py": "6f39bd1634caaff87d9e3bb05c393fe6f0f6b1cf15ffb4ce1bffeab8770a9481",
   "pool_memory.py": "380fcfedbf62dc6f2e7ab2d32aa9b587dd5a223e2fc73e981d6ce08969ce0173",
@@ -100,5 +100,6 @@
   "deployment/mlink-start.sh.patch": "7863b2140fa79d061d83e6b72d1e50343d85e8444cc61db9a47545cafdb8c403",
   "deployment/cubelet-dynamic.yaml.patch": "13f1dd153bbad30fe6457cd0234b20f392470812dfffc4fb316de923b56a2c54",
   "deployment/uffd-serve.sh.patch": "e563455526131901e748bb11d8890df01bcf7681923779df474fa6d37cb8a247",
-  "deployment/cube-api-capacity.conf": "f25867edb5436d8adca4d9a5c432f51798582035f1f046ab5e374e4c0771e49c"
+  "deployment/cube-api-capacity.conf": "f25867edb5436d8adca4d9a5c432f51798582035f1f046ab5e374e4c0771e49c",
+  "offline_report.py": "d019568b114add0d4739c9f564ce3d06d622f45405f5c240167501f24704f491"
 }
