@@ -1,0 +1,26 @@
+{
+  "accelerator": {
+    "commit": "363bb3c4c2e2ffe75d2467adbf5308e95108440e",
+    "branch": "sandbox_fork_native_staging"
+  },
+  "guest-runtime": {
+    "commit": "4a0bd754655fe5056210ff1bf146768f69252adf",
+    "branch": "sandbox_fork_native_staging"
+  },
+  "sandboxer": {
+    "commit": "ecd15a8b622c48d3f44448da49f272712a8ad2e7",
+    "branch": "sandbox_fork_native_staging"
+  },
+  "orchestrator": {
+    "commit": "87d83c95d58d94acbd2a900b46790d491f014e48",
+    "branch": "sandbox_fork_native_staging"
+  },
+  "cloud-hypervisor": {
+    "commit": "1bfcd7cec7d7d21a52bd9c3760ae669947c36d90",
+    "branch": "sandbox_fork_native_staging"
+  },
+  "connector": {
+    "commit": "6b48c8f450dac707b708a08980a463c1d66ff847",
+    "branch": "sandbox_fork_native_staging"
+  }
+}

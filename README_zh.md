@@ -77,3 +77,10 @@ Stable/Preview 表示发行通道。生产部署仍需验收容量，并配置 T
 
 项目原创内容采用 [Apache License 2.0](LICENSE)。第三方和其他许可证材料保留各自声明与署名，
 [贡献指南](CONTRIBUTING_zh.md)说明贡献许可。
+
+## 原生 fork 开发分支
+
+本分支基于当前 `kuasar-sandbox` 组件实现运行中沙箱 fork 和运行中快照。
+构建和验证入口见[迁移测试说明](test/native-fork/README.md)，接口、隔离、持久化屏障
+及当前边界见相邻 sandboxer 仓库的 `docs/native-fork.md`。
+当前原生路径基于快照恢复，与早期私有 RAM fork 后端不同，不能沿用旧版本的性能数字。

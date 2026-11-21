@@ -1,0 +1,38 @@
+[
+  {
+    "repo": "kuasar-sandbox",
+    "upstream": "kuasar-sandbox/kuasar-sandbox",
+    "base": "ae9a1a6863bb05a8c2772a0f38d998455926742a",
+    "branch": "sandbox_fork_native_staging"
+  },
+  {
+    "repo": "accelerator",
+    "upstream": "kuasar-sandbox/accelerator",
+    "base": "3a7740e28327f0001c17d37b9c7da25fba53b65d",
+    "branch": "sandbox_fork_native_staging"
+  },
+  {
+    "repo": "connector",
+    "upstream": "kuasar-sandbox/connector",
+    "base": "6b48c8f450dac707b708a08980a463c1d66ff847",
+    "branch": "sandbox_fork_native_staging"
+  },
+  {
+    "repo": "sandboxer",
+    "upstream": "kuasar-sandbox/sandboxer",
+    "base": "38f8e00278e23653fac68a6825cebe526635b324",
+    "branch": "sandbox_fork_native_staging"
+  },
+  {
+    "repo": "guest-runtime",
+    "upstream": "kuasar-sandbox/guest-runtime",
+    "base": "a6329f958319ebea4a389d99a34d3bb63f72ed1b",
+    "branch": "sandbox_fork_native_staging"
+  },
+  {
+    "repo": "orchestrator",
+    "upstream": "kuasar-sandbox/orchestrator",
+    "base": "ab31684fbab499b13a6828a9ac77480577ea736d",
+    "branch": "sandbox_fork_native_staging"
+  }
+]
