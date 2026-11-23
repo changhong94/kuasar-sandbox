@@ -95,3 +95,12 @@ references. Report vulnerabilities privately through [SECURITY](SECURITY.md).
 Original project content is licensed under [Apache License 2.0](LICENSE).
 Third-party and differently licensed material retains its declarations and
 attribution. [CONTRIBUTING](CONTRIBUTING.md) explains contribution licensing.
+
+## Native fork development branch
+
+This branch develops running-sandbox fork and live snapshots on the current
+`kuasar-sandbox` components. See [migration tests and build workspace](test/native-fork/README.md)
+and the sibling sandboxer's `docs/native-fork.md` for supported interfaces,
+isolation and persistence barriers, and current limitations. The native
+snapshot-backed path is distinct from the earlier private-RAM fork backend;
+legacy performance numbers do not describe this branch.
