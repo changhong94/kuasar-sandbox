@@ -14,6 +14,7 @@ for p in new.rglob('*.py'):
  s=p.read_text().replace(str(old),str(new));p.write_text(s)
 for p in (new/'six/tools').glob('*.json'):
  s=p.read_text().replace(str(old),str(new));p.write_text(s);p.chmod(0o600)
+p=new/'six_driver.py';s=p.read_text().replace("  x=json.loads((R/'fork2/status.json').read_text())","  state=R/'fork2/status.json'\n  if not state.exists():time.sleep(1);continue\n  x=json.loads(state.read_text())");p.write_text(s)
 # Dedicated new private keys are refreshed by the six-product deployment stage.
 p=new/'fork2/tools/full_run.py';s=p.read_text().replace("'pool50.py'),'current','50'","'pool50.py'),'current','20'");p.write_text(s)
 p=new/'fork2/tools/pool50.py';s=p.read_text().replace(" empty();run('systemctl'", " existing=out/f'{i:02d}.json'\n if existing.exists():\n  row=json.loads(existing.read_text());assert row['success'];continue\n empty();run('systemctl'",1);p.write_text(s)

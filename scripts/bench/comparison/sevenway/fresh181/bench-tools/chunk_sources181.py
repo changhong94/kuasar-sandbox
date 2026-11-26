@@ -26,4 +26,3 @@ def source_delta(before,after):
             'file_definition':'RocksDB payload file read; not necessarily physical device IO',
             'scope':'before create through completion of first print command, before destruction',
             'unknown_definition':'inline payload with file IO that cannot be separated from index/filter IO'}
-
