@@ -185,7 +185,7 @@ for lang in [False,True]:
  for k in ['save_ms','restore_api_ms','restore_print_ms']:
   title={'save_ms':tr('保存 / ms','Save / ms'),'restore_api_ms':tr('恢复 API / ms','Restore API / ms'),'restore_print_ms':tr('恢复至 print / ms','Restore to print / ms')}[k]
   table([title,'Median','P95','P99','Max'],[[LABEL[p],*map(fmt,stat(vals(a[p],k)))]for p in P])
- note('保存：发出暂停/持久化请求至 API 确认完成。恢复 API 返回不等于 guest 已能运行；恢复到 print 从恢复请求前计时，到新启动 Python 输出随机标识。保存前写入并同步文件，恢复后检查原进程继续、文件内容以及删除确认。以上不是运行中短暂停快照。','Save: pause/persist request to API acknowledgement. Restore API return does not prove guest readiness; restore-to-print starts before restore and ends on output from newly launched Python. Files are synced before save; process continuity, file content and deletion are verified after restore. This is distinct from short-pause live snapshotting.')
+ note('保存：发出暂停/持久化请求至 API 确认完成。恢复 API 返回不等于 guest 已能运行；恢复到 print 从恢复请求前计时，到新启动 Python 输出随机标识。保存前写入并同步文件，恢复后检查原进程继续、文件内容以及删除确认。','Save: pause/persist request to API acknowledgement. Restore API return does not prove guest readiness; restore-to-print starts before restore and ends on output from newly launched Python. Files are synced before save; process continuity, file content and deletion are verified after restore.')
 
  page('两沙箱存储增量','Storage growth for two sandboxes')
  for content in ['same','different']:

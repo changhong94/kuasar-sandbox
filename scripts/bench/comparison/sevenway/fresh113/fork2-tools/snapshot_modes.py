@@ -48,8 +48,10 @@ for lang in ['python','node','ruby']:
  try:
   gate();t=time.perf_counter_ns();parent=Sandbox.create(reg['template_id'],timeout=600,**opts)
   assert parent.commands.run('true',user='root',cwd='/',timeout=60).exit_code==0
-  req=urllib.request.Request(a['api']+'/sandboxes/'+parent.sandbox_id+'/snapshots',data=b'{}',headers={'X-API-Key':a['key'],'Content-Type':'application/json'})
-  with urllib.request.urlopen(req,timeout=300)as f:template=json.load(f)
+  for endpoint, body in [('/pause', {'memory':True}), ('/export', {'toTemplate':True,'keepSource':True})]:
+   req=urllib.request.Request(a['api']+'/sandboxes/'+parent.sandbox_id+endpoint,data=json.dumps(body).encode(),headers={'X-API-Key':a['key'],'Content-Type':'application/json'})
+   with urllib.request.urlopen(req,timeout=300) as f: published=f.read()
+  template={'templateID':json.loads(published)['result'],'metadata':{'kuasar-sandbox.restore':'{"fork_identity":true}'}}
   template.update(image_digest=reg['manifest'],preparation_ms=(time.perf_counter_ns()-t)/1e6,no_interpreter_started_during_preparation=True)
   encoded=template['templateID'][len('e2b-snp-'):];ref=base64.urlsafe_b64decode(encoded+'='*(-len(encoded)%4)).decode();template['root_ref']=ref
   assert ref.startswith('manifest://'if mode=='remote'else'file://'),ref
