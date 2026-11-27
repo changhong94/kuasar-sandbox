@@ -98,7 +98,7 @@ attribution. [CONTRIBUTING](CONTRIBUTING.md) explains contribution licensing.
 
 ## Native fork development branch
 
-This branch develops running-sandbox fork and live snapshots on the current
+This branch develops running-sandbox fork and persistent snapshot restore on the current
 `kuasar-sandbox` components. See [migration tests and build workspace](test/native-fork/README.md)
 and the sibling sandboxer's `docs/native-fork.md` for supported interfaces,
 isolation and persistence barriers, and current limitations. The native

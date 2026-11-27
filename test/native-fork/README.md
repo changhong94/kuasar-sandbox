@@ -102,19 +102,15 @@ also includes launching the test's host-side SDK helper and connecting to the
 parent; it is not a pure server or Python-print benchmark.
 
 
-## Live capture and generic pool checks
+## Running fork and generic pool checks
 
 Use `api_smoke.py --memory-stress --fork-rounds 10` for ten captures from one
 running source while a 16 MiB workload verifies page contents; the final child
 also forks after the original parent is deleted. Run once locally and once with
-`--remote`. `runners.log` contains task-specific capture phases and before-image
-copy counts. These correctness timings are not a six-way performance benchmark.
+`--remote`. `runners.log` contains task-specific capture phases. These correctness timings are not a six-way performance benchmark.
 The recorded CH-pause-through-reattach interval excludes guest quiesce preparation.
 
-`--snapshot-template` exercises the dedicated live-snapshot HTTP endpoint,
-ordinary Create without opt-in fork metadata, repeated reuse after source deletion,
-credential/file isolation and subsequent fork. It is separate from batch/repeat
-mode. `smoke.py --checkpoints --fork --remote --network --tcp-state --tapfd`
+`smoke.py --checkpoints --fork --remote --network --tcp-state --tapfd`
 exercises direct Manifest capture while the source has live external and loopback
 connections; it does not first serialize through the API's local publication stage.
 
@@ -197,8 +193,7 @@ Scope and deliberate capability rejections are listed in
 `sandboxer/docs/native-fork.md`. `api_smoke.py --native-private` selects the isolated conductor's direct-RAM
 HTTP/E2B backend. `--prepared-pool --pool-image-two PATH` checks one image-free
 pool with different images; `--pause-resume` checks process-preserving save and
-restore. `--snapshot-template` verifies live capture, source deletion, repeated
-snapshot reuse, and a direct-RAM fork from the restored instance. Add `--remote`
+restore. Add `--remote`
 for encrypted chunked Manifest storage. These tests do not switch the legacy
 website. The SDK fixture starts a separate SDK client process for each action;
 its outer timings include that process/import cost and must not be substituted
@@ -217,8 +212,8 @@ generation after snapshot restore and source deletion. Snapshot restoration
 binds the currently allocated provider TAP even when it is a reconnect rather
 than a clone. The historical TAP in the snapshot is never an allocation lease.
 
-Add `--snapshot-template --memory-stress --restart-controller` (one fork round)
-to test ongoing memory writes, live snapshots and controller restart; add
+Add `--memory-stress --restart-controller` (one fork round)
+to test ongoing memory writes, running fork and controller restart; add
 `--remote` for encrypted chunked Manifest publication and demand restore.
 These are correctness scenarios; controller restart is separate from host reset.
 

@@ -72,14 +72,6 @@ def action_worker(ident,action):
   update('sandboxes',ident,state='deleted',busy=False);purge_deleted()
  except Exception as e:update('sandboxes',ident,busy=False,error=str(e))
 
-def capture_worker(ident,snapid):
- try:
-  result=backend('POST',target(ident)+'/snapshots',{})
-  directory=publication(result['templateID'])
-  allocated=sum(p.stat().st_blocks*512 for p in directory.rglob('*') if p.is_file())
-  update('snapshots',snapid,state='ready',template_id=result['templateID'],pause_ms=result.get('guestPauseMs'),durable_ms=result['elapsedMs'],allocated_bytes=allocated)
- except Exception as e:update('snapshots',snapid,state='failed',error=str(e))
- finally:update('sandboxes',ident,busy=False)
 
 def purge_deleted():
  with LOCK:
@@ -144,13 +136,6 @@ def submit(path,body):
    ident='sb-'+uuid.uuid4().hex[:12]
    row=dict(id=ident,name=unique_display_name('sandbox',im['name']),image_id=im['id'],image_name=im['name'],snapshot_id=source if kind=='snapshot' else None,state='creating',busy=True,created_at=time.time())
    put('sandboxes',row);POOL.submit(create_worker,ident,source,kind);return row
-  if path=='/api/snapshot':
-   ident=body.get('sandbox_id');row=get('sandboxes',ident)
-   if row['state']!='running' or row.get('busy'):raise ValueError('只有运行中的空闲沙箱可以创建快照')
-   if any(s['parent']==ident and s['state'] in ['capturing','saving'] for s in rows('snapshots')):raise ValueError('此沙箱已有快照正在保存')
-   name=unique_display_name('snapshot',row['image_name'])
-   snap=dict(id='sn-'+uuid.uuid4().hex,name=name,parent=ident,image_id=row['image_id'],image_name=row['image_name'],state='capturing',created_at=time.time())
-   put('snapshots',snap);update('sandboxes',ident,busy=True);POOL.submit(capture_worker,ident,snap['id']);return snap
   if path=='/api/action':
    ident=body.get('id');action=body.get('action');row=get('sandboxes',ident)
    if row.get('busy'):raise ValueError('操作进行中，请稍候')

@@ -18,8 +18,7 @@ only its image/sandbox/snapshot operations, not credentials or arbitrary exec.
 
 Run `deploy.py --binaries PATH` as root on 108. It refuses an existing deployment,
 occupied ports or the already-allocated subnet. The binaries must be a complete
-native migration build, including the guest runtime and the live-snapshot timing
-protocol. It copies binaries instead of linking them: `node-ctl` locates sibling
+native migration build, including the guest runtime. It copies binaries instead of linking them: `node-ctl` locates sibling
 executables using its own executable path.
 
 Then import the existing immutable five demo image disks in a private mount
@@ -45,18 +44,10 @@ that lookup. No language-specific prewarm is performed.
 ## Lifecycle and persistence
 
 The console retains the established automatic names and separate image,
-snapshot and running-sandbox tables. Snapshot names cannot collide; only running,
-idle sandboxes may capture. Creating a sandbox from a snapshot does not consume
-that snapshot. Local capture uses the normal native API, with the source resumed
-before background persistence finishes. Direct running-parent fork remains the
-native authenticated `/sandboxes/{id}/fork` API.
-
-`guestPauseMs` measures from the host's guest-quiesce request through successful
-guest ACK and stdio-MUX reattachment. It includes quiesce and device capture, but
-excludes subsequent background persistence. `elapsedMs` is the whole native
-snapshot request through durable publication. The CLI emits timing only in its
-opt-in progress stream; the S/E publication schema is unchanged. Missing timing
-is displayed as unavailable, never replaced with publication duration.
+snapshot and running-sandbox tables. Existing saved snapshots can create new
+sandboxes without being consumed. Running snapshot creation is not exposed
+in this branch. Direct running-parent fork uses the authenticated
+`/sandboxes/{id}/fork` API.
 
 The console SQLite database uses WAL and synchronous FULL. A deleted snapshot
 is hidden immediately; its separately published local graph is retained while
@@ -65,15 +56,6 @@ exposed. This local demo does not implement remote-store garbage collection or
 import legacy VM snapshots across different guest-runtime ABIs. Existing legacy
 snapshots remain usable through the unchanged old website.
 
-`validate.py --output RESULT --leave-example` exercises all five images through
-the new web API: actual Python execution, inherited process continuation,
-snapshot reuse after source deletion, isolation, snapshot deletion while a child
-remains alive, and independent deletion. It cleans up only its own objects.
-`--leave-example` leaves a Python sandbox and snapshot for inspection.
-
-A web restart does not restart the controller or VM runners. Completed records
-remain usable. Interrupted operations are marked for inspection; this console
-does not claim transactional exactly-once HTTP submission across process loss.
 Physical host reboot semantics belong to the native persisted-snapshot path;
 this console does not automatically checkpoint unsaved sandboxes at shutdown.
 

@@ -2,10 +2,9 @@
 """Task-owned native conductor/proxy/vswitch validation. Does not alter global sysctls."""
 import threading
 import argparse,base64,hashlib,json,os,pathlib,shutil,signal,socket,subprocess,re,tarfile,time,urllib.request,urllib.error,uuid
-p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--work',required=True);p.add_argument('--image-file',required=True);p.add_argument('--remote',action='store_true');p.add_argument('--native-private',action='store_true');p.add_argument('--sdk-python');p.add_argument('--batch',action='store_true');p.add_argument('--memory-stress',action='store_true');p.add_argument('--fork-rounds',type=int,default=1);p.add_argument('--snapshot-template',action='store_true');p.add_argument('--prepared-pool',action='store_true');p.add_argument('--pool-image-two');p.add_argument('--restart-controller',action='store_true');p.add_argument('--pause-resume',action='store_true');p.add_argument('--connected-udp',action='store_true');p.add_argument('--dynamic-memory',action='store_true');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--work',required=True);p.add_argument('--image-file',required=True);p.add_argument('--remote',action='store_true');p.add_argument('--native-private',action='store_true');p.add_argument('--sdk-python');p.add_argument('--batch',action='store_true');p.add_argument('--memory-stress',action='store_true');p.add_argument('--fork-rounds',type=int,default=1);p.add_argument('--prepared-pool',action='store_true');p.add_argument('--pool-image-two');p.add_argument('--restart-controller',action='store_true');p.add_argument('--pause-resume',action='store_true');p.add_argument('--connected-udp',action='store_true');p.add_argument('--dynamic-memory',action='store_true');a=p.parse_args()
 assert os.geteuid()==0,'root required'
 assert 1<=a.fork_rounds<=10,'fork rounds must be 1..10'
-assert not a.snapshot_template or (not a.batch and a.fork_rounds==1),'snapshot-template uses one capture'
 assert not json.loads(subprocess.check_output(['ip','-j','route','show','exact','100.123.120.0/24'])),'test subnet is already in use'
 bin=pathlib.Path(a.bin);work=pathlib.Path(a.work);work.mkdir(parents=True,exist_ok=False);os.chmod(work,0o700)
 tag='kn'+uuid.uuid4().hex[:7];run=pathlib.Path('/run')/tag;run.mkdir(mode=0o700);switch=tag;ns=tag+'ns';mgmt=tag+'m0';unit=tag+'-runner@.service';unitpath=pathlib.Path('/run/systemd/system')/unit
@@ -164,27 +163,16 @@ try:
  report['preceding_fork_ready_ms']=rounds
  report['preceding_request_to_print_ms']=print_rounds
  started=time.monotonic()
- saved_snapshot=None
- if a.snapshot_template:
-  saved_snapshot=request('POST','/sandboxes/'+sid+'/snapshots',{})
-  assert saved_snapshot['templateID'] and saved_snapshot['elapsedMs']>=0
-  assert 0 < saved_snapshot['guestPauseMs'] <= saved_snapshot['elapsedMs'],saved_snapshot
-  report['snapshot_guest_pause_ms']=saved_snapshot['guestPauseMs']
-  assert getready(sid),'snapshot consumed parent'
-  # Deliberately omit fork metadata: a fresh memory-template identity must
-  # receive the isolation handshake automatically.
-  child=request('POST','/sandboxes',{'templateID':saved_snapshot['templateID'],'timeout':300})
- elif a.batch:
+ if a.batch:
   children=request('POST','/sandboxes/'+sid+'/fork',{'timeout':300,'count':2})
   assert len(children)==2 and all('sandbox' in c for c in children),children
   child=children[0]['sandbox'];sibling=children[1]['sandbox']['sandboxID'];ids.append(sibling)
  else:child=json.loads(sdk(sid,'',action='fork')) if a.sdk_python else request('POST','/sandboxes/'+sid+'/fork',{'timeout':300})[0]['sandbox']
- cid=child['sandboxID'];ids.append(cid);report['snapshot_then_create_api_ms' if a.snapshot_template else 'fork_api_ms']=(time.monotonic()-started)*1000
- wait(lambda:getready(cid),90);report['snapshot_then_create_ready_ms' if a.snapshot_template else 'fork_ready_ms']=(time.monotonic()-started)*1000
+ cid=child['sandboxID'];ids.append(cid);report['fork_api_ms']=(time.monotonic()-started)*1000
+ wait(lambda:getready(cid),90);report['fork_ready_ms']=(time.monotonic()-started)*1000
  marker='native-'+uuid.uuid4().hex
  assert py(cid,'print('+repr(marker)+')')==marker
  report['request_to_print_ms']=(time.monotonic()-started)*1000
- if saved_snapshot:report['snapshot_publication_ms']=saved_snapshot['elapsedMs']
  if a.batch:
   assert getready(sibling),'batch returned before readiness'
   assert json.loads(py(sibling,"print(open('/tmp/progress.json').read())"))['identity']==before['identity']
@@ -228,14 +216,6 @@ try:
   report['resume_to_checked_python_ms']=(time.monotonic()-resume_start)*1000
   report['pause_resume_inherited_process']=True
  request('DELETE','/sandboxes/'+sid);ids.remove(sid);assert py(cid,"print(open('/root/value').read())")=='child'
- if saved_snapshot:
-  again=request('POST','/sandboxes',{'templateID':saved_snapshot['templateID'],'timeout':300})
-  aid=again['sandboxID'];ids.append(aid);wait(lambda:getready(aid),90)
-  assert py(aid,"print(open('/root/value').read())")=='captured'
-  assert dbvalue(aid)=='1'
-  assert json.loads(py(aid,"print(open('/tmp/progress.json').read())"))['identity']==before['identity']
-  request('DELETE','/sandboxes/'+aid);ids.remove(aid)
-  report['live_snapshot_reusable_after_source_delete']=True
 
  grand=json.loads(sdk(cid,'',action='fork')) if a.sdk_python else request('POST','/sandboxes/'+cid+'/fork',{'timeout':300})[0]['sandbox'];gid=grand['sandboxID'];ids.append(gid);wait(lambda:getready(gid),90)
  assert py(gid,"print(open('/root/value').read())")=='child'
@@ -295,7 +275,6 @@ try:
  journal=output(['journalctl','--no-pager','-o','cat','-u',tag+'-runner@*.service'])
  (work/'runners.log').write_text(journal)
  report['ch_pause_through_guest_reattach_ms']=[float(v) for v in re.findall(r'parent resumed before persistence pause_ms=([0-9.]+)',journal)]
- report['before_image_bytes']=[int(v) for v in re.findall(r'before_image_bytes=(\d+)',journal)]
  if a.prepared_pool:
   assert journal.count('prepared VM ready')>=3,'reserve was not replenished'
   assert 'prepared VM workload claimed' in journal,'Create bypassed prepared VM'
